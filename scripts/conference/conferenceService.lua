@@ -546,11 +546,8 @@ function newConferenceService(confPhone)
         for i, member in ipairs(members) do
             local is_in = member['is_in'];
             local to = member['user']..'@'.. member['realm'];
-            if nil ~= rom_user then
-                sentIt = sendSMS(confPhone, to, from_user..',said:', arg0, arg1, arg2, arg3, arg4) or sentIt;
-            else
-                sentIt = sendSMS(confPhone, to, arg0, arg1, arg2, arg3, arg4) or sentIt;
-            end;
+
+            sentIt = sendSMS(confPhone, to, arg0, arg1, arg2, arg3, arg4) or sentIt;
         end;
 
         return sentIt;
