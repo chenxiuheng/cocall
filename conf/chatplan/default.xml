@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<include>
+  <context name="public">
+
+    <extension name="api">
+       <condition field="to_user" expression="^(110.*)$">
+	    <action application="lua" data="conference/110.lua"/> 
+      </condition>
+    </extension>
+
+    
+      <extension name="conference">
+       <condition field="to_user" expression="^(34.*)$">
+	    <action application="lua" data="conference/onConferenceMsg.lua"/> 
+      </condition>
+    </extension>
+
+    <extension name="default">
+      <condition field="to" expression="^1(.*)$">
+	    <action application="lua" data="sms/proxy.lua"/>
+        <!--
+    	<action application="reply" data="Hello, you said: ${_body}"/>
+-->
+      </condition>
+    </extension>
+    
+
+  </context>
+</include>
