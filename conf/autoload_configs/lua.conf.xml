@@ -31,8 +31,10 @@
     <!--<param name="startup-script" value="startup_script_2.lua"/>-->
     <param name="startup-script" value="onStartup.lua"/>
     
-    <hook event="CUSTOM" subclass="sofia::register" script="onRegesited.lua"/>
-    <hook event="CUSTOM" subclass="sofia::unregister" script="onUnRegesited.lua"/>
+
+
+    <hook event="CUSTOM" subclass="sofia::register" script="user/onRegesited.lua"/>
+    <hook event="CUSTOM" subclass="sofia::unregister" script="user/onUnregesited.lua"/>
 
     <!-- script for conference -->
     <hook event="CUSTOM" subclass="conference::maintenance" script="conference/onConferenceEvent.lua"/>
