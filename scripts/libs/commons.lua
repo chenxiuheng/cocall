@@ -1,3 +1,4 @@
+
 function isTrue(value) 
     if (nil == value or '' == value) then return false; end;
     if (2 == value or '2' == value) then  return false; end;
@@ -38,44 +39,44 @@ function getLogger(prefix)
     local level = 0;
 
     function asMsg(arg0, arg1, arg2, arg3, arg4, arg5) 
-        local msg = '';
+        local msg = '\n';
         if nil ~= arg5 then
-            msg = string.format("%s %s %s %s %s %s", arg0, arg1, arg2, arg3, arg4, arg5);
+            msg = string.format("%s %s %s %s %s %s\n", arg0, arg1, arg2, arg3, arg4, arg5);
         elseif nil ~= arg4 then
-            msg = string.format("%s %s %s %s %s", arg0, arg1, arg2, arg3, arg4);
+            msg = string.format("%s %s %s %s %s\n", arg0, arg1, arg2, arg3, arg4);
         elseif nil ~= arg3 then
-            msg = string.format("%s %s %s %s", arg0, arg1, arg2, arg3);
+            msg = string.format("%s %s %s %s\n", arg0, arg1, arg2, arg3);
         elseif nil ~= arg2 then
-            msg = string.format("%s %s %s", arg0, arg1, arg2);
+            msg = string.format("%s %s %s\n", arg0, arg1, arg2);
         elseif nil ~= arg1 then
-            msg = string.format("%s %s", arg0, arg1);
+            msg = string.format("%s %s\n", arg0, arg1);
         elseif nil ~= arg0 then
-            msg = string.format("%s", arg0);
+            msg = string.format("%s\n", arg0);
         else 
-            msg = 'nil';
+            msg = 'nil\n';
         end;
 
         return msg;
     end;    
 
     function output(level, arg0, arg1, arg2, arg3, arg4, arg5) 
-        if nil == prefix then
-            print('['..level..'] '..asMsg(arg0, arg1, arg2, arg3, arg4, arg5));
-        else
-            print(prefix..'['..level..'] '..asMsg(arg0, arg1, arg2, arg3, arg4, arg5));
-        end;    
+        if nil ~= prefix then
+            freeswitch.consoleLog(level, prefix..'\n');
+        end;
+
+        freeswitch.consoleLog(level, asMsg(arg0, arg1, arg2, arg3, arg4, arg5));
     end;
 
     log.debug = function(arg0, arg1, arg2, arg3, arg4, arg5)
-        output('debug', arg0, arg1, arg2, arg3, arg4, arg5);
+        output('DEBUG', arg0, arg1, arg2, arg3, arg4, arg5);
     end;
 
     log.info = function(arg0, arg1, arg2, arg3, arg4, arg5)
-        output('info', arg0, arg1, arg2, arg3, arg4, arg5);
+        output('INFO', arg0, arg1, arg2, arg3, arg4, arg5);
     end;
 
      log.warn = function(arg0, arg1, arg2, arg3, arg4, arg5)
-        output('warn', arg0, arg1, arg2, arg3, arg4, arg5);
+        output('WARNING', arg0, arg1, arg2, arg3, arg4, arg5);
     end;
 
     return log;
@@ -84,32 +85,52 @@ end;
 
 
 function sendSMS(fromUrl, toUrl, arg0, arg1, arg2, arg3, arg4, arg5)
+    function v (arg)
+        if nil == arg then return ''; else return arg; end;
+    end;
+
     local msg;
     local endArgs = false;
 
-    if nil == arg0 then msg ='\n';
-    elseif nil == arg1 then msg = string.format('%s\n', arg0); 
-    elseif nil == arg2 then msg = string.format('%s\n%s\n', arg0, arg1);
-    elseif nil == arg3 then msg = string.format('%s\n%s\n%s\n', arg0, arg1, arg2);
-    elseif nil == arg4 then msg = string.format('%s\n%s\n%s\n%s\n', arg0, arg1, arg2, arg3);
-    elseif nil == arg5 then msg = string.format('%s\n%s\n%s\n%s\ns\n', arg0, arg1, arg2, arg3, arg4);
-    elseif nil ~= arg5 then msg = string.format('%s\n%s\n%s\n%s\ns\ns\n', arg0, arg1, arg2, arg3, arg4, arg5);
+    if     nil ~= arg5 then msg = string.format('%s\n%s\n%s\n%s\ns\ns\n', v(arg0), v(arg1), v(arg2), v(arg3), v(arg4), v(arg5));
+    elseif nil ~= arg4 then msg = string.format('%s\n%s\n%s\n%s\ns\n',    v(arg0), v(arg1), v(arg2), v(arg3), v(arg4));
+    elseif nil ~= arg3 then msg = string.format('%s\n%s\n%s\n%s\n',       v(arg0), v(arg1), v(arg2), v(arg3));
+    elseif nil ~= arg2 then msg = string.format('%s\n%s\n%s\n',           v(arg0), v(arg1), v(arg2));
+    elseif nil ~= arg1 then msg = string.format('%s\n%s\n',               v(arg0), v(arg1));
+    elseif nil ~= arg0 then msg = string.format('%s\n',                   v(arg0));
+    else msg ='\n';
     end;
 
 
     -- decode sip url
+    local hostname = freeswitch.API():execute("global_getvar", "global_hostname");
+    if nil == hostname or '' == hostname then
+        hostname = '0.0.0.0';
+        print('global_hostname in vars.xml is unknown');
+    end;
+    local internal_sip_port = freeswitch.getGlobalVariable('internal_sip_port');
     function readUrl(url, defaultHost)
         local proto = 'sip';
         local user_name;
         local user;
         local user_full;
 
+        --  sip:122@chenxh.thunisoft.com:9060
+        for v1, v2, v3, v4 in string.gmatch(url, "([^:]+):([^@]+)@([^:]+):([^;]+)(.*)") do
+            proto = v1;
+            user_name = v2;
+            user = v2..'@'..v3;
+            user_full = v1 ..':'..v2..'@'..v3..':'..v4;
+
+            return proto, user_name, user, user_full;
+        end;
+
         --  sip:122@chenxh.thunisoft.com
         for v1, v2, v3 in string.gmatch(url, "([^:]+):([^@]+)@([^;]+)(.*)") do
             proto = v1;
             user_name = v2;
             user = v2..'@'..v3;
-            user_full = url;
+            user_full = v1 ..':'..v2..'@'..v3..':'..internal_sip_port;
 
             return proto, user_name, user, user_full;
         end;
@@ -118,7 +139,7 @@ function sendSMS(fromUrl, toUrl, arg0, arg1, arg2, arg3, arg4, arg5)
         for v2, v3 in string.gmatch(url, "([^@]+)@([^;]+)(.*)") do
             user_name = v2;
             user = v2..'@'..v3;
-            user_full = 'sip:'..v2..'@'..v3;
+            user_full = 'sip:'..v2..'@'..v3..':'..internal_sip_port;
             return proto, user_name, user, user_full;
         end;
 
@@ -126,7 +147,7 @@ function sendSMS(fromUrl, toUrl, arg0, arg1, arg2, arg3, arg4, arg5)
         for v2 in string.gmatch(url, "([^@]+)@") do
             user_name = v2;
             user = v2..'@'..defaultHost;
-            user_full = 'sip:'..v2..'@'..defaultHost;
+            user_full = 'sip:'..v2..'@'..defaultHost..':'..internal_sip_port;
             return proto, user_name, user, user_full;
         end;
 
@@ -134,16 +155,11 @@ function sendSMS(fromUrl, toUrl, arg0, arg1, arg2, arg3, arg4, arg5)
         local v2 = url;
         user_name = v2;
         user = v2..'@'..defaultHost;
-        user_full = 'sip:'..v2..'@'..defaultHost;
+        user_full = 'sip:'..v2..'@'..defaultHost..':'..internal_sip_port;
         return proto, user_name, user, user_full;
     end;
 
 
-    local hostname = freeswitch.API():execute("global_getvar", "global_hostname");
-    if nil == hostname or '' == hostname then
-        hostname = '0.0.0.0';
-        print('global_hostname in vars.xml is unknown');
-    end;
 
     local from_proto, from_user, from, from_full = readUrl(fromUrl, hostname);
     local to_proto, to_user, to, to_full = readUrl(toUrl, '0.0.0.0');
@@ -151,7 +167,7 @@ function sendSMS(fromUrl, toUrl, arg0, arg1, arg2, arg3, arg4, arg5)
 
     local hasSentIt = false;
     local sql;
-    sql = string.format("SELECT reg_user as user, realm as realm from registrations where reg_user='%s'", to_user);
+    sql = string.format("SELECT user_id, realm, profile from t_registration_ext where user_id='%s'", to_user);
     executeQuery(sql, function(row)
         local event = freeswitch.Event("CUSTOM", "SMS::SEND_MESSAGE");
         event:addHeader("proto", from_proto);
@@ -159,15 +175,20 @@ function sendSMS(fromUrl, toUrl, arg0, arg1, arg2, arg3, arg4, arg5)
         event:addHeader("from", from);
         event:addHeader("from_user", from_user);
         event:addHeader("from_full", from_full); 
-        event:addHeader("to", row['user']..'@'..row['realm']);
-        event:addHeader("to_user", row['user']);
+        event:addHeader("to", row['user_id']..'@'..row['realm']);
+        event:addHeader("to_user", row['user_id']);
         event:addHeader("type", "text/plain");
         event:addHeader("replying", "false");
-        event:addHeader("sip_profile", "internal"); -- sofia status profile internal reg
+        event:addHeader("sip_profile", row['profile']); -- sofia status profile internal reg
+
 
         event:addBody(msg);
         event:chat_execute("send");
         hasSentIt = true;
+
+        local logger = getLogger('com.thunisoft.cocall.sms');
+        logger.debug('sendTo', row['user_id'], '@', row['realm']);
+        logger.debug(msg);
     end);
 
     return hasSentIt;

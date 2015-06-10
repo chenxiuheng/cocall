@@ -1,11 +1,4 @@
 local api = freeswitch.API();
-local scripts_base_dir = api:execute("global_getvar", "base_dir")..'/scripts';
-if nil == string.find(package.path, scripts_base_dir) then
-    package.path = package.path..';'..
-                scripts_base_dir..'/?.lua'..';';
-end;
-
-
 FreeSWITCH_IPv4 = message:getHeader('FreeSWITCH-IPv4');
 
 

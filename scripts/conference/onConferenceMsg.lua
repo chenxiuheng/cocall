@@ -3,11 +3,6 @@
 -- ///////////////////////////////////////////////////// ---
 
 local api = freeswitch.API();
-local scripts_base_dir = api:execute("global_getvar", "base_dir")..'/scripts';
-if nil == string.find(package.path, scripts_base_dir) then
-    package.path = package.path..';'..
-                scripts_base_dir..'/?.lua'..';';
-end;
 
 require('libs.db');
 require('libs.commons');
@@ -98,7 +93,7 @@ if nil ~= confPhone and nil ~=  from_user then
         local hasSentIt = false;
         for i, member in ipairs(members) do
            local is_in = member['is_in'];
-           local to = member['user']..'@'.. member['realm'];
+           local to = member['user'];
 
            if isTrue(is_in) then
               hasSentIt = sendSMS(confPhone, to, 'conference-ask-for-moderator', params);
@@ -113,6 +108,13 @@ if nil ~= confPhone and nil ~=  from_user then
         service.notifyAll();
     elseif action == 'conference_get_members' then
         service.notifyAll(user);
+    elseif action == 'conference_set_name' then
+        for new_name in string.gmatch(params, "([^\n]*)\n") do
+            if nil ~= new_name and "" ~= new_name then
+                service.setName(new_name);
+            end;
+        end; 
+        service.sayTo('all', nil, 'conference-set-name',  service.getName());
     else -- say msg to others
         local sentIt = false;
 

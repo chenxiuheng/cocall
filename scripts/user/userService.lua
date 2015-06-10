@@ -1,4 +1,30 @@
 
+function saveRegistrationExt(call_id, profile, user_id, user_agent, realm, contact, expires)
+    local sql;
+    sql = sqlstring.format("delete from t_registration_ext where call_id='%s'", call_id);
+    executeUpdate(sql);
+
+    sql = sqlstring.format(
+            "insert into t_registration_ext "..
+            "  (call_id, profile, user_id, user_agent, realm, contact, expires, expired, created) "..
+            "values ('%s', '%s', '%s', '%s', '%s', '%s', %s, now() + interval '%s' second, now())",
+                call_id, profile, user_id, user_agent, realm, contact, expires, expires
+        );
+    executeUpdate(sql);
+end;
+
+function deleteRegistrationExt(call_id)
+    local sql;
+    sql = sqlstring.format("delete from t_registration_ext where call_id='%s'", call_id);
+    executeUpdate(sql);
+end;
+
+function deleteRegistrationExtOutOfDate()
+    local sql;
+    sql = sqlstring.format("delete from t_registration_ext where expired < now()");
+    executeUpdate(sql);
+end;
+
 function saveOrUpdateUser(id, phone, name, pass)
     local sql;
     sql = string.format("select c_id from t_user where c_id = '%s' ", id);
@@ -48,12 +74,4 @@ function getUser(user)
     return selected;
 end;
 
-function userLogout(user, token)
-    local sql;
-    sql = string.format(
-            "delete from registrations where token='%s' and reg_user='%s'",
-            token, user
-        ); 
 
-    executeUpdate(sql);
-end;

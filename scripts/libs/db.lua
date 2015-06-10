@@ -6,14 +6,35 @@ if nil == globalDSN then
 end;
 
 
-local dbh = freeswitch.Dbh(dsn);
+dbh = nil;
+sqlstring = {}
+function sqlstring.format (format, ...)
+    local args = {...};
+    
+    local index = 1;     
+    local sql = '';
+    local param;
+    for match in string.gmatch(format..'%s', "(.-)%%s") do
+        if nil ~= args[index] then
+            -- replace "'" to "''" for postgres
+            sql = sql .. match .. string.gsub(args[index], "'", "''");
+        else 
+            sql = sql .. match;
+        end;
+
+        index = index + 1;
+    end
+
+    return sql;
+end;
 
 -- use sql query
 function executeQuery(sql, callback) 
+    if nil == dbh then dbh = freeswitch.Dbh(dsn); end;
 
     local numRows = 0;
     if dbh:connected() then
-        freeswitch.consoleLog("notice", sql .. "\n") 
+        --freeswitch.consoleLog("debug", sql .. "\n") 
 
         dbh:query(sql, function(row)
             numRows = numRows + 1;
@@ -30,9 +51,10 @@ function executeQuery(sql, callback)
 end;
 
 function executeUpdate(sql)
+    if nil == dbh then dbh = freeswitch.Dbh(dsn); end;
+
     if dbh:connected() then
-        freeswitch.consoleLog("info", sql .. "\n") ;
-print(sql);
+        --freeswitch.consoleLog("info", sql .. "\n") ;
         dbh:query(sql);
     else 
         freeswitch.consoleLog("warning", "cannot connect to database by " .. dsn .. "\n")                        

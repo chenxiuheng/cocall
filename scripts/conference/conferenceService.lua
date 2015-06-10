@@ -24,7 +24,7 @@ local logger = getLogger('conference');
 function getConferenceMembers(confPhone, user, except)
     local sql;
 
-    sql = string.format(
+    sql = sqlstring.format(
         " SELECT DISTINCT "..
         " mem.c_phone_no  as user, "..
         " mem.c_name      as name, "..
@@ -32,11 +32,10 @@ function getConferenceMembers(confPhone, user, except)
         " mem.c_member_type as type, "..
         " mem.n_member_id as member_id, "..
         " mem.n_can_speak as can_speak, "..
-        " r.realm as realm, "..
+        " (select count(*) from t_registration_ext where user_id=mem.c_phone_no) as is_online, "..
         " mem.n_is_modirator as is_moderator "..
         " FROM "..
         " t_conference_member AS mem "..
-        " LEFT JOIN registrations AS r ON mem.c_phone_no = r.reg_user "..
         " where mem.c_conference_phone_no = '%s' ",
         confPhone
     );
@@ -46,7 +45,7 @@ function getConferenceMembers(confPhone, user, except)
     elseif 'moderator' == user then
         sql = sql .. "  and n_is_modirator = 1";
     elseif 'all' ~= user and nil ~= user then
-        sql = sql .. string.format(" AND mem.c_phone_no='%s'", user);
+        sql = sql .. sqlstring.format(" AND mem.c_phone_no='%s'", user);
     end;
 
     if 'non_moderator' == except then 
@@ -54,13 +53,13 @@ function getConferenceMembers(confPhone, user, except)
     elseif 'moderator' == except then
         sql = sql .. "  and n_is_modirator <> 1";
     elseif nil ~= user then
-        sql = sql .. string.format(" AND mem.c_phone_no<>'%s'", except);
+        sql = sql .. sqlstring.format(" AND mem.c_phone_no<>'%s'", except);
     end;
 
     local memberIndex = 1;    
     local members = {};
     executeQuery(sql, function(row)
-        if not isTrue(row['realm']) then
+        if not isTrue(row['is_online']) then
             row['is_in'] = '2';
         end;
 
@@ -76,17 +75,17 @@ function updateConferenceMemberFields(confPhone, user, field, value)
 
     local isVarchar = nil ~= string.match(field, "^[cC].*$");
     if isVarchar then
-        sql = sql .. " set " .. field .. string.format("='%s'", value);
+        sql = sql .. " set " .. field .. sqlstring.format("='%s'", value);
     else    
-        sql = sql .. " set " .. field .. string.format("=%s", value);
+        sql = sql .. " set " .. field .. sqlstring.format("=%s", value);
     end;
 
-    sql = sql .. string.format(" where c_conference_phone_no = '%s' ", confPhone);
+    sql = sql .. sqlstring.format(" where c_conference_phone_no = '%s' ", confPhone);
 
     if 'non_moderator' == user then
         sql = sql .. "  and n_is_modirator <> 1 ";
     elseif nil ~= user then
-        sql = sql .. string.format("  and c_phone_no = '%s' ", user);
+        sql = sql .. sqlstring.format("  and c_phone_no = '%s' ", user);
     end;
 
     executeUpdate(sql);
@@ -94,13 +93,13 @@ end;
 
 function setConferenceModerator(confPhone, user)
     local sql;
-    sql = string.format(
+    sql = sqlstring.format(
             "update t_conference set c_modirator_phone_no='%s' where c_phone_no='%s' ",
             user, confPhone
         );
     executeUpdate(sql);
     
-    sql = string.format(
+    sql = sqlstring.format(
             "update t_conference_member set n_is_modirator = (case when c_phone_no = '%s' then 1 else 2 end)  "..
             " where c_conference_phone_no='%s'",
             user, confPhone
@@ -108,11 +107,21 @@ function setConferenceModerator(confPhone, user)
     executeUpdate(sql);
 end;
 
+function setConferenceName(confPhone, newName)
+    local sql;
+    sql = sqlstring.format(
+            "update t_conference set c_name='%s' where c_phone_no='%s'  ",
+            newName, confPhone
+        );
+    
+    executeUpdate(sql);
+end;
+
 function setConferenceMemberIn (confPhone, user, memberId)
     if nil == user then return ;end;
 
     local sql;
-    sql = string.format(
+    sql = sqlstring.format(
             "update t_conference_member set n_is_in=1, n_member_id=%s "..
             " where n_is_in<>1 and c_conference_phone_no = '%s' and c_phone_no='%s' ",
             memberId, confPhone, user
@@ -126,7 +135,7 @@ function setConferenceMemberOut(confPhone, user, memberId)
 
     -- 1, update DB state, the member must be last used.
     --     if the member id in DB is not eq memberId arg, do nothing
-    sql = string.format(
+    sql = sqlstring.format(
         " update t_conference_member set n_is_in=2, n_has_video=2 "..   
         " where c_conference_phone_no='%s' and c_phone_no='%s'  and n_member_id=%s",
         confPhone, user, memberId
@@ -148,7 +157,7 @@ function createConference (name, creator, creatorName)
     assert(phoneNo, "T_Phone have NOT config for 'conf'");
 
     -- 2, insert row data
-    local sql = string.format(
+    local sql = sqlstring.format(
             'insert into t_conference  '..
             ' (c_phone_no, c_modirator_phone_no, c_name, c_creator, c_creator_name, d_created, d_plan, n_valid, c_profile,  n_is_running)'..
             "values ('%s', '%s', '%s', '%s', '%s', now(), now(), 1, 'default', 2)",
@@ -162,7 +171,7 @@ end;
 
 function setConferenceIsRunning(confPhone, n_is_running)
     local sql;
-    sql = string.format("update t_conference set n_is_running =%s where c_phone_no='%s'",
+    sql = sqlstring.format("update t_conference set n_is_running =%s where c_phone_no='%s'",
             n_is_running,
             confPhone
         );
@@ -170,7 +179,7 @@ function setConferenceIsRunning(confPhone, n_is_running)
 end;
 
 function getConferenceInfo(confPhone)
-    local sql = string.format(
+    local sql = sqlstring.format(
         ' SELECT '..
         ' conf.c_phone_no as conference, '..
         ' conf.c_name as name, '..
@@ -200,7 +209,7 @@ function getMyConferences (memberPhone, runningOnly)
     local extraSql = "";
     if nil ~= runningOnly and runningOnly then extraSql = " and n_is_running = 1 " ;end;
 
-    local sql = string.format(
+    local sql = sqlstring.format(
             ' SELECT '..
             ' conf.c_phone_no as conference, '..
             ' conf.c_name as name, '..
@@ -211,7 +220,7 @@ function getMyConferences (memberPhone, runningOnly)
             ' conf.n_valid as valid, '..
             '  (extract(epoch from now()) - extract(epoch from d_created)) as age,'..
             ' (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no) as num_member, '..
-            ' (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no and n_is_in = 1) as num_online'..
+            ' (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no and n_is_in = 1) as num_is_in '..
             ' FROM '..
             '    t_conference AS conf '..
             ' where  n_valid=1 '..
@@ -245,6 +254,9 @@ function newConferenceService(confPhone)
         if nil == info then info = getConferenceInfo(confPhone); end;
         return info;
     end;
+    function releaseInfo()
+        info = nil;
+    end;
 
 
     service.getPhoneNo = function()
@@ -260,6 +272,22 @@ function newConferenceService(confPhone)
 
         if nil ~= info then return info['name'] end;
         return nil;
+    end;
+
+    service.setName = function (new_name)
+        if nil == new_name or "" == new_name then
+            logger.info('empty name[', new_name, '], ignore it');
+            return false; 
+        end;
+
+        if nil ~= info and info['name'] == new_name then
+            logger.info('same name[', new_name, '], ignore it');
+            return false; 
+        end;
+
+        setConferenceName(confPhone, new_name);
+        releaseInfo();
+        return true;
     end;
 
     service.getCreator = function()
@@ -291,11 +319,10 @@ function newConferenceService(confPhone)
         end;
 
         setConferenceIsRunning(confPhone, n_is_running);
+        releaseInfo();
     end;
 
-    service.addMember=function(member)
-
-
+    service.addMember=function(member, firstInsert)
         local uuid = confPhone..'.'..member['user'];
         local user = member['user'];
         local name = member['name'];
@@ -303,15 +330,17 @@ function newConferenceService(confPhone)
         -- check it existed
         local sql;
         local existed = false;
-        sql = string.format(
-                "select count(*) num from t_conference_member where c_conference_phone_no = '%s' and c_phone_no = '%s'",
-                confPhone, user
-            );
-        executeQuery(sql, function(row)
-            if row['num'] ~= '0' then existed = true end;
-        end);
+        if nil ~= firstInsert and firstInsert then
+            sql = sqlstring.format(
+                    "select count(*) num from t_conference_member where c_conference_phone_no = '%s' and c_phone_no = '%s'",
+                    confPhone, user
+                );
+            executeQuery(sql, function(row)
+                if row['num'] ~= '0' then existed = true end;
+            end);
 
-        if existed then return true; end; -- existed, do nothing
+            if existed then return true; end; -- existed, do nothing
+        end;
         
 
         local info = getInfo();
@@ -325,7 +354,7 @@ function newConferenceService(confPhone)
         local isModerator =  2;
         if member['user'] == info['moderator'] then isModerator = 1 end;
 
-        sql = string.format(
+        sql = sqlstring.format(
                 'insert into t_conference_member '..
                 "   (c_id, c_conference_phone_no, c_phone_no, c_name, d_created, n_is_modirator, n_can_hear, n_can_speak)"..
                 " values "..
@@ -357,7 +386,7 @@ function newConferenceService(confPhone)
         end;
 
         -- delete from db
-        sql = string.format(
+        sql = sqlstring.format(
                 " delete from t_conference_member "..
                 " where c_conference_phone_no = '%s' "..
                 "   AND c_phone_no = '%s'",
@@ -365,12 +394,13 @@ function newConferenceService(confPhone)
             );
         executeUpdate(sql);
 
+        releaseInfo();
     end;
 
     service.destroy = function ()
         -- set conference invalid
         local sql;
-        sql = string.format(
+        sql = sqlstring.format(
                "update t_conference set n_valid = 2 where c_phone_no='%s'",
                 confPhone
             );
@@ -384,14 +414,15 @@ function newConferenceService(confPhone)
         for i, member in ipairs(members) do
             is_in = member['is_in'];
             memberId = member['member_id'];
-            to = member['user']..'@'..member['realm'];
+            to = member['user'];
             freeswitch.API():execute('conference', confPhone ..' kick '.. memberId);
 
             if isTrue(is_in) then
-                send(confPhone, to, 'destroy');
+                sendSMS(confPhone, to, 'conference-destroy');
             end;
         end;
 
+        releaseInfo();
     end;
 
     service.mute = function(user)
@@ -423,6 +454,8 @@ function newConferenceService(confPhone)
                 end;
             end;
         end;
+        
+        releaseInfo();
     end;
 
     service.unmute = function(user)
@@ -454,19 +487,21 @@ function newConferenceService(confPhone)
                 end;
             end;
         end;
+
+        releaseInfo();
     end;
 
     service.setModerator = function(user)
         local sql;
         
         -- update DB
-        sql = string.format(
+        sql = sqlstring.format(
                 "update t_conference set c_modirator_phone_no='%s' where c_phone_no='%s' ",
                 user, confPhone
             );
         executeUpdate(sql);
 
-        sql = string.format(
+        sql = sqlstring.format(
                 "update t_conference_member set n_is_modirator = (case when c_phone_no = '%s' then 1 else 2 end) where c_conference_phone_no='%s' ",
                 user, confPhone
             );
@@ -483,6 +518,8 @@ function newConferenceService(confPhone)
                 freeswitch.API():execute('conference', service.getPhoneNo()..' vid-floor '..member_id ..' force');
             end;
         end;
+
+        releaseInfo();
     end;
 
     service.notifyAll = function(filter) 
@@ -495,27 +532,46 @@ function newConferenceService(confPhone)
         
         
         -- 3, build msg
+        local oct_to_hex = {}
+        oct_to_hex[0] = '0';
+        oct_to_hex[1] = '1';
+        oct_to_hex[2] = '2';
+        oct_to_hex[3] = '3';
+        oct_to_hex[4] = '4';
+        oct_to_hex[5] = '5';
+        oct_to_hex[6] = '6';
+        oct_to_hex[7] = '7';
+        oct_to_hex[8] = '8';
+        oct_to_hex[9] = '9';
+        oct_to_hex[10] = 'A';
+        oct_to_hex[11] = 'B';
+        oct_to_hex[12] = 'C';
+        oct_to_hex[13] = 'D';
+        oct_to_hex[14] = 'E';
+        oct_to_hex[15] = 'F';
         for i, member in ipairs(members) do
             local user = member['user'];
             local name = member['name'];
-            local realm = member['realm'];
+            local is_online = member['is_online'];
             local is_in = member['is_in'];
             local can_speak = member['can_speak'];
             local is_moderator = member['is_moderator'];
-           
-            local online = 'online';
-            if isFalse(realm) then online = 'offline' end;
+            
+            local flags = 0;
 
-            local isInConference = 'out';
-            if isTrue(is_in) then isInConference = 'in' end;
+            --  'online';
+            if isTrue(is_online) then flags = flags + 8; end;
 
-            local mute = 'mute';
-            if isTrue(can_speak) then mute = 'unmute'; end;
+            -- isInConference;
+            if isTrue(is_in) then flags = flags + 4; end;
 
-            local member = 'member';
-            if isTrue(is_moderator) then member = 'moderator';end;
+            -- unmute
+            if isTrue(can_speak) then flags = flags + 2; end;
 
-            msg = msg .. string.format('%s;%s;%s;%s;%s;%s;\n', user, name, online, isInConference, mute, member);
+            -- is_moderator
+            if isTrue(is_moderator) then flags = flags + 1;end;
+          
+            msg = msg .. sqlstring.format('%s;%s;%s;\n', user, name, oct_to_hex[flags]);
      
         end;
 
@@ -525,12 +581,12 @@ function newConferenceService(confPhone)
         for i, member in ipairs(members) do
             local user = member['user'];
             local name = member['name'];
-            local realm = member['realm'];
+            local is_online = member['is_online'];
             local is_in = member['is_in'];
 
 
-            if isTrue(realm) and (nil == filter or user == filter) then -- and isTrue(is_in), maybe the state is reliable 
-                local to = user ..'@'..realm;
+            if isTrue(is_online) and (nil == filter or user == filter) then -- and isTrue(is_in), maybe the state is reliable 
+                local to = user;
                 sendSMS(confPhone, to, "conference-members", msg);
             end;       
         end;  
@@ -545,7 +601,7 @@ function newConferenceService(confPhone)
         local sentIt;
         for i, member in ipairs(members) do
             local is_in = member['is_in'];
-            local to = member['user']..'@'.. member['realm'];
+            local to = member['user'];
 
             sentIt = sendSMS(confPhone, to, arg0, arg1, arg2, arg3, arg4) or sentIt;
         end;
@@ -565,5 +621,7 @@ end;
 
 function formatConferenceFull(info)
     if nil == info then return ''; end;
-    return string.format('%s;%s;%s;%s;%s;', info['conference'], info['name'], info['creator'], info['creator_name'], info['age']);
+    return string.format('%s;%s;%s;%s;%s;%s/%s;', 
+            info['conference'], info['name'], info['creator'], info['creator_name'], info['age'], info['num_is_in'], info['num_member']
+        );
 end;

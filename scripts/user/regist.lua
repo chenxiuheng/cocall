@@ -1,15 +1,52 @@
 local api = freeswitch.API();
-local scripts_base_dir = api:execute("global_getvar", "base_dir")..'/scripts';
-if nil == string.find(package.path, scripts_base_dir) then
-    package.path = package.path..';'..
-                scripts_base_dir..'/?.lua'..';';
-end;
 require('libs.db');
 require('libs.commons');
 require('user.userService');
 
 
-freeswitch.consoleLog("debug", "provided params:\n" .. params:serialize() .."\n")
+--[[ event = 
+    Event-Name: REQUEST_PARAMS
+    Core-UUID: c6894680-0390-11e5-aea5-c34894ddf95a
+    FreeSWITCH-Hostname: localhost.localdomain
+    FreeSWITCH-Switchname: localhost.localdomain
+    FreeSWITCH-IPv4: 114.255.140.107
+    FreeSWITCH-IPv6: %3A%3A1
+    Event-Date-Local: 2015-06-02%2021%3A17%3A17
+    Event-Date-GMT: Tue,%2002%20Jun%202015%2013%3A17%3A17%20GMT
+    Event-Date-Timestamp: 1433251037879273
+    Event-Calling-File: sofia_reg.c
+    Event-Calling-Function: sofia_reg_parse_auth
+    Event-Calling-Line-Number: 2741
+    Event-Sequence: 236398
+    action: sip_auth
+    sip_profile: internal
+    sip_user_agent: Linphone/3.8.0%20(belle-sip/1.4.0)
+    sip_auth_username: 1018
+    sip_auth_realm: 114.255.140.107
+    sip_auth_nonce: b15b89be-0929-11e5-aec2-c34894ddf95a
+    sip_auth_uri: sip%3A114.255.140.107%3A9060
+    sip_contact_user: 1018
+    sip_contact_host: 114.255.140.98
+    sip_to_user: 1018
+    sip_to_host: 114.255.140.107
+    sip_via_protocol: udp
+    sip_from_user: 1018
+    sip_from_host: 114.255.140.107
+    sip_call_id: 9S-owrxnqj
+    sip_request_host: 114.255.140.107
+    sip_request_port: 9060
+    sip_auth_qop: auth
+    sip_auth_cnonce: 055542fd
+    sip_auth_nc: 00000001
+    sip_auth_response: 5d915e919473a834928ddfd67b040677
+    sip_auth_method: REGISTER
+    client_port: 54508
+    key: id
+    user: 1018
+    domain: 114.255.140.107
+    ip: 114.255.140.98
+]]
+
 
 local key = params:getHeader('key');
 local user = params:getHeader('user');
