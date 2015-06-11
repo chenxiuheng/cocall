@@ -25,7 +25,7 @@ if session:ready() then
     for i, member in ipairs(members)  do
 
         --  because of 
-        freeswitch.consoleLog(l"LRNING", "WAITING: \n")
+        freeswitch.consoleLog("WLRNING", "WAITING: \n")
         freeswitch.msleep(3 * 1000);
         freeswitch.consoleLog("WARNING", "stop WAITING: \n")
 

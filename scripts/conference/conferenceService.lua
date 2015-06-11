@@ -70,6 +70,16 @@ function getConferenceMembers(confPhone, user, except)
     return members;
 end;
 
+function setConferenceUpdated(confPhone)
+    local sql;
+    sql = sqlstring.format(
+            "update t_conference set d_updated = now() where c_phone_no='%s'",
+            confPhone
+        );
+    
+    executeUpdate(sql);
+end;
+
 function updateConferenceMemberFields(confPhone, user, field, value)
     local sql = "update t_conference_member ";
 
@@ -89,6 +99,8 @@ function updateConferenceMemberFields(confPhone, user, field, value)
     end;
 
     executeUpdate(sql);
+
+    setConferenceUpdated(confPhone);
 end;
 
 function setConferenceModerator(confPhone, user)
@@ -105,6 +117,8 @@ function setConferenceModerator(confPhone, user)
             user, confPhone
         );
     executeUpdate(sql);
+
+    setConferenceUpdated(confPhone);
 end;
 
 function setConferenceName(confPhone, newName)
@@ -115,6 +129,8 @@ function setConferenceName(confPhone, newName)
         );
     
     executeUpdate(sql);
+
+    setConferenceUpdated(confPhone);
 end;
 
 function setConferenceMemberIn (confPhone, user, memberId)
@@ -128,6 +144,8 @@ function setConferenceMemberIn (confPhone, user, memberId)
         ); 
 
     executeUpdate(sql);
+
+    setConferenceUpdated(confPhone);
 end;
 
 function setConferenceMemberOut(confPhone, user, memberId)
@@ -141,9 +159,26 @@ function setConferenceMemberOut(confPhone, user, memberId)
         confPhone, user, memberId
     );
     executeUpdate(sql);
+
+    setConferenceUpdated(confPhone);
 end;
 
 
+
+function getUpdatedConferenceIds(milliseconds)
+    local sql;
+    sql = sqlstring.format(
+            "select c_phone_no from t_conference where now() - d_updated  < INTERVAL '%s millisecond' and  n_is_running = 1",
+            milliseconds
+        );
+
+    local ids = {};    
+    executeQuery(sql, function(row)
+        table.insert(ids, row['c_phone_no']);
+    end);
+
+    return ids;
+end;
 
 -- created conference    
 function createConference (name, creator, creatorName)
@@ -159,8 +194,8 @@ function createConference (name, creator, creatorName)
     -- 2, insert row data
     local sql = sqlstring.format(
             'insert into t_conference  '..
-            ' (c_phone_no, c_modirator_phone_no, c_name, c_creator, c_creator_name, d_created, d_plan, n_valid, c_profile,  n_is_running)'..
-            "values ('%s', '%s', '%s', '%s', '%s', now(), now(), 1, 'default', 2)",
+            ' (c_phone_no, c_modirator_phone_no, c_name, c_creator, c_creator_name, d_created, d_updated, d_plan, n_valid, c_profile,  n_is_running)'..
+            "values ('%s', '%s', '%s', '%s', '%s', now(),  now(), now(), 1, 'default', 2)",
             phoneNo, creator, name, creator, creatorName
         );
     executeUpdate(sql);
@@ -171,7 +206,7 @@ end;
 
 function setConferenceIsRunning(confPhone, n_is_running)
     local sql;
-    sql = sqlstring.format("update t_conference set n_is_running =%s where c_phone_no='%s'",
+    sql = sqlstring.format("update t_conference set n_is_running =%s, d_created = now() where c_phone_no='%s'",
             n_is_running,
             confPhone
         );
@@ -269,6 +304,54 @@ function newConferenceService(confPhone)
         end;
 
         batchSendSMS(confPhone, to_users, msg);
+    end;
+
+    function asMsg(members)
+        local msg = 'conference-members'; -- msg to dispatch to members
+
+        local oct_to_hex = {}
+        oct_to_hex[0] = '0';
+        oct_to_hex[1] = '1';
+        oct_to_hex[2] = '2';
+        oct_to_hex[3] = '3';
+        oct_to_hex[4] = '4';
+        oct_to_hex[5] = '5';
+        oct_to_hex[6] = '6';
+        oct_to_hex[7] = '7';
+        oct_to_hex[8] = '8';
+        oct_to_hex[9] = '9';
+        oct_to_hex[10] = 'A';
+        oct_to_hex[11] = 'B';
+        oct_to_hex[12] = 'C';
+        oct_to_hex[13] = 'D';
+        oct_to_hex[14] = 'E';
+        oct_to_hex[15] = 'F';
+        for i, member in ipairs(members) do
+            local user = member['user'];
+            local name = member['name'];
+            local is_online = member['is_online'];
+            local is_in = member['is_in'];
+            local can_speak = member['can_speak'];
+            local is_moderator = member['is_moderator'];
+            
+            local flags = 0;
+
+            --  'online';
+            if isTrue(is_online) then flags = flags + 8; end;
+
+            -- isInConference;
+            if isTrue(is_in) then flags = flags + 4; end;
+
+            -- unmute
+            if isTrue(can_speak) then flags = flags + 2; end;
+
+            -- is_moderator
+            if isTrue(is_moderator) then flags = flags + 1;end;
+          
+            msg = msg .. sqlstring.format('\n%s;%s;%s;', user, name, oct_to_hex[flags]);
+        end;
+
+        return msg;
     end;
 
 
@@ -531,60 +614,29 @@ function newConferenceService(confPhone)
         releaseInfo();
     end;
 
-    service.notifyAll = function(filter) 
-        local sql;
+    service.getMemberStates = function ()
+        -- 1, get member's states
         local members;
-        local msg = ''; -- msg to dispatch to members
+        members = getConferenceMembers(confPhone);
+        
+        -- 2, build msg
+        local msg = asMsg(members);
+        return msg;
+    end;
 
-        -- 2, get member's states
+    service.dispatchMemberStates = function ()
+        -- 1, get member's states
+        local members;
         members = getConferenceMembers(confPhone);
         
         
-        -- 3, build msg
-        local oct_to_hex = {}
-        oct_to_hex[0] = '0';
-        oct_to_hex[1] = '1';
-        oct_to_hex[2] = '2';
-        oct_to_hex[3] = '3';
-        oct_to_hex[4] = '4';
-        oct_to_hex[5] = '5';
-        oct_to_hex[6] = '6';
-        oct_to_hex[7] = '7';
-        oct_to_hex[8] = '8';
-        oct_to_hex[9] = '9';
-        oct_to_hex[10] = 'A';
-        oct_to_hex[11] = 'B';
-        oct_to_hex[12] = 'C';
-        oct_to_hex[13] = 'D';
-        oct_to_hex[14] = 'E';
-        oct_to_hex[15] = 'F';
-        for i, member in ipairs(members) do
-            local user = member['user'];
-            local name = member['name'];
-            local is_online = member['is_online'];
-            local is_in = member['is_in'];
-            local can_speak = member['can_speak'];
-            local is_moderator = member['is_moderator'];
-            
-            local flags = 0;
-
-            --  'online';
-            if isTrue(is_online) then flags = flags + 8; end;
-
-            -- isInConference;
-            if isTrue(is_in) then flags = flags + 4; end;
-
-            -- unmute
-            if isTrue(can_speak) then flags = flags + 2; end;
-
-            -- is_moderator
-            if isTrue(is_moderator) then flags = flags + 1;end;
-          
-            msg = msg .. sqlstring.format('%s;%s;%s;\n', user, name, oct_to_hex[flags]);
-     
-        end;
-
+        -- 2, build msg
+        local msg = asMsg(members);
         dispatchSMS(members, msg, filter);
+    end;
+
+    service.notifyAll = function() 
+        setConferenceUpdated(confPhone);
     end;
 
     service.toSimpleString = function() 

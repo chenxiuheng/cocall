@@ -1,7 +1,3 @@
--- ///////////////////////////////////////////////////// ---
----------  receive Conference Message from Client ----------
--- ///////////////////////////////////////////////////// ---
-
 local api = freeswitch.API();
 
 require('libs.db');
@@ -35,7 +31,7 @@ if nil ~= confPhone and nil ~=  from_user then
                 success = service.addMember(member);
 
                 sendSMS(confPhone, user, "conference-join", service.toSimpleString());
-            else 
+            else
                 logger.warn('Fail Add User(', user, name, ')');
             end;
         end
@@ -46,10 +42,10 @@ if nil ~= confPhone and nil ~=  from_user then
             if '' ~= user then
                 service.kick(user, from_user);
                 sendSMS(confPhone, user, "conference-kick", service.toSimpleString());
-               
+
             end;
-        end; 
-        
+        end;
+
         service.notifyAll();
     elseif action == 'conference_destroy' then
         local members = service.getMembers('all');
@@ -61,13 +57,13 @@ if nil ~= confPhone and nil ~=  from_user then
     elseif action == 'conference_mute'  then
         for user in string.gmatch(params, "([^\n]*)\n") do
             service.mute(user);
-        end; 
+        end;
 
         service.notifyAll();
     elseif action == 'conference_unmute' then
         for user in string.gmatch(params, "([^\n]*)\n") do
             service.unmute(user);
-        end; 
+        end;
 
         service.notifyAll();
     elseif action =='conference_set_moderator' then
@@ -77,15 +73,15 @@ if nil ~= confPhone and nil ~=  from_user then
             service.setModerator(user);
 
             -- you are a moderator
-            if lastModerator ~= user then 
-                sendSMS(confPhone, user, "conference-as-moderator", service.toSimpleString()); 
+            if lastModerator ~= user then
+                sendSMS(confPhone, user, "conference-as-moderator", service.toSimpleString());
             end;
 
             -- you are a member only
             if nil ~= lastModerator and lastModerator ~= user then
-                sendSMS(confPhone, lastModerator, "conference-as-member", service.toSimpleString()); 
+                sendSMS(confPhone, lastModerator, "conference-as-member", service.toSimpleString());
             end;
-        end; 
+        end;
 
         service.notifyAll();
     elseif action == 'conference-ask-for-moderator' then
@@ -102,18 +98,19 @@ if nil ~= confPhone and nil ~=  from_user then
 
         if not hasSentIt then
             service.setModerator(from_user);
-            sendSMS(confPhone, from_user, "conference-as-moderator", service.toSimpleString()); 
+            sendSMS(confPhone, from_user, "conference-as-moderator", service.toSimpleString());
         end;
 
         service.notifyAll();
     elseif action == 'conference_get_members' then
-        service.notifyAll(user);
+        local msg = service.getMemberStates();
+        service.sayTo(user, nil, msg);
     elseif action == 'conference_set_name' then
         for new_name in string.gmatch(params, "([^\n]*)\n") do
             if nil ~= new_name and "" ~= new_name then
                 service.setName(new_name);
             end;
-        end; 
+        end;
         service.sayTo('all', nil, 'conference-set-name',  service.getName());
     else -- say msg to others
         local sentIt = false;
@@ -126,12 +123,13 @@ if nil ~= confPhone and nil ~=  from_user then
             local dstUsers = string.sub(action, i+1);
 
             if sayTo == 'sayTo' then
-                sentIt = service.sayTo(dstUsers, from_user, txt);
+                sentIt = true;
+                service.sayTo(dstUsers, from_user, txt);
             end;
         end;
 
         if not sentIt then
-            sendSMS(confPhone, from_user, 'reply', "I don't know what you said", txt);
+            service.sayTo('all', from_user, txt);
         end;
 
     end;
@@ -139,7 +137,4 @@ if nil ~= confPhone and nil ~=  from_user then
 else
     logger.warn("illegal arguments from ", from_user, "to", confPhone, ".");
 end;
-
-message:chat_execute('reply','');
-
 

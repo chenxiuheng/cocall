@@ -4,18 +4,23 @@ require('user.userService');
 require('conference.conferenceService');
 
 
+
+freeswitch.consoleLog("INFO", event:serialize()..'\n');
+
+
 -- save registeration info
 local call_id = event:getHeader('call-id');
 local profile = event:getHeader('profile-name');
 local user_id = event:getHeader('username');
 local user_agent = event:getHeader('user-agent');
 local realm = event:getHeader('realm');
+local local_host = event:getHeader('to-host');
 local contact = event:getHeader('contact');
 local expires = event:getHeader('expires');
 if nil == expires then expires = 3600; end;
 
 if nil ~= call_id and nil ~= profile and nil ~= user_id then
-    saveRegistrationExt(call_id, profile, user_id, user_agent, realm, contact, expires);
+    saveRegistrationExt(call_id, profile, user_id, user_agent, realm, local_host, contact, expires);
 end;
 
 

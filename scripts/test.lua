@@ -2,6 +2,24 @@ require('libs.commons');
 require('libs.db');
 require('conference.conferenceService');
 
+freeswitch.API():execute('bgapi', "lua conference/task.lua");
+
+local ids = getUpdatedConferenceIds(7000 + 100);
+for k, v in pairs(ids) do
+    print("kva", k, v);
+end;
+
+
+local toUsers = {};
+table.insert(toUsers, '10261');
+table.insert(toUsers, '10752');
+table.insert(toUsers, '10605');
+batchSendSMS('110', toUsers, 'lin1', 'lin2', 'lin3');
+
+batchSendSMS('110', {}, 'lin1', 'lin2', 'lin3');
+
+
+
 local key2 = 'key2';
 local value  = 'values';
 local var a = {key=value, key2=key2};

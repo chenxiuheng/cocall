@@ -56,8 +56,11 @@ local domain = params:getHeader('domain');
 local ip = params:getHeader('ip');
 local port = params:getHeader('client_port');
 
+--domain = '172.16.160.149';
+
 assert (domain and user,
   "This example script only supports generating directory xml for a single user !\n")
+
 
 
 if domain ~= nil and key~=nil and user~=nil then
@@ -108,4 +111,8 @@ else
       </section>
     </document>]]
 end
+
+
+freeswitch.consoleLog("DEBUG", XML_STRING..'\n');
+
 

@@ -24,11 +24,22 @@ sql = string.format('delete from t_registration_ext');
 executeUpdate(sql);
 print(">>>> delete from t_registration_ext");
 
-
-print('prepare delete online user out of date');
+local userClock = 0;
+local conferenceClock = 0;
 while true do
-    deleteRegistrationExtOutOfDate();
+    freeswitch.msleep(25);
 
-    freeswitch.msleep(60 * 1000);
+    userClock = userClock + 25;
+    conferenceClock = conferenceClock + 25;
+
+    if userClock > (60 * 1000) then
+        userClock = 0;
+        freeswitch.API():execute('bgapi', "lua user/task.lua");
+    end;
+
+    if conferenceClock > 500 then
+        conferenceClock = 0;
+        freeswitch.API():execute('bgapi', "lua conference/task.lua");
+    end;
 end;
 
