@@ -99,8 +99,6 @@ function updateConferenceMemberFields(confPhone, user, field, value)
     end;
 
     executeUpdate(sql);
-
-    setConferenceUpdated(confPhone);
 end;
 
 function setConferenceModerator(confPhone, user)
@@ -117,8 +115,6 @@ function setConferenceModerator(confPhone, user)
             user, confPhone
         );
     executeUpdate(sql);
-
-    setConferenceUpdated(confPhone);
 end;
 
 function setConferenceName(confPhone, newName)
@@ -129,8 +125,6 @@ function setConferenceName(confPhone, newName)
         );
     
     executeUpdate(sql);
-
-    setConferenceUpdated(confPhone);
 end;
 
 function setConferenceMemberIn (confPhone, user, memberId)
@@ -144,8 +138,6 @@ function setConferenceMemberIn (confPhone, user, memberId)
         ); 
 
     executeUpdate(sql);
-
-    setConferenceUpdated(confPhone);
 end;
 
 function setConferenceMemberOut(confPhone, user, memberId)
@@ -159,8 +151,6 @@ function setConferenceMemberOut(confPhone, user, memberId)
         confPhone, user, memberId
     );
     executeUpdate(sql);
-
-    setConferenceUpdated(confPhone);
 end;
 
 
@@ -293,12 +283,12 @@ function newConferenceService(confPhone)
         info = nil;
     end;
 
-    function dispatchSMS(members, msg, except)
+    function dispatchSMS(members, msg)
         local to_users = {};
         for i, member in ipairs(members) do
             local is_in = member['is_in'];
             local user = member['user'];
-            if isTrue(is_in) and except ~= user then
+            if isTrue(is_in)  then
                 table.insert(to_users, user);
             end;
         end;
@@ -632,7 +622,8 @@ function newConferenceService(confPhone)
         
         -- 2, build msg
         local msg = asMsg(members);
-        dispatchSMS(members, msg, filter);
+
+        dispatchSMS(members, msg);
     end;
 
     service.notifyAll = function() 

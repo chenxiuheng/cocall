@@ -69,7 +69,6 @@ if not isTemplateConference then
             end;
         end;
 
-
         service.notifyAll();
     elseif action == 'del-member' and nil ~= user then
         setConferenceMemberOut(confPhone, user, memberId);
