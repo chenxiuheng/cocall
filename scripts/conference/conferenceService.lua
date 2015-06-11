@@ -32,7 +32,7 @@ function getConferenceMembers(confPhone, user, except)
         " mem.c_member_type as type, "..
         " mem.n_member_id as member_id, "..
         " mem.n_can_speak as can_speak, "..
-        " (select count(*) from t_registration_ext where user_id=mem.c_phone_no) as is_online, "..
+        " (select count(*) from t_registration_ext as ext  where ext.user_id=mem.c_phone_no ) as is_online, "..
         " mem.n_is_modirator as is_moderator "..
         " FROM "..
         " t_conference_member AS mem "..
@@ -258,6 +258,19 @@ function newConferenceService(confPhone)
         info = nil;
     end;
 
+    function dispatchSMS(members, msg, except)
+        local to_users = {};
+        for i, member in ipairs(members) do
+            local is_in = member['is_in'];
+            local user = member['user'];
+            if isTrue(is_in) and except ~= user then
+                table.insert(to_users, user);
+            end;
+        end;
+
+        batchSendSMS(confPhone, to_users, msg);
+    end;
+
 
     service.getPhoneNo = function()
         return confPhone;
@@ -409,18 +422,14 @@ function newConferenceService(confPhone)
         -- kick from swtich
         local is_in;
         local memberId;
-        local to;
         local members = getConferenceMembers(confPhone);
         for i, member in ipairs(members) do
             is_in = member['is_in'];
             memberId = member['member_id'];
-            to = member['user'];
             freeswitch.API():execute('conference', confPhone ..' kick '.. memberId);
-
-            if isTrue(is_in) then
-                sendSMS(confPhone, to, 'conference-destroy');
-            end;
         end;
+
+        dispatchSMS(members, 'conference-destroy');
 
         releaseInfo();
     end;
@@ -575,38 +584,31 @@ function newConferenceService(confPhone)
      
         end;
 
-        logger.debug("conference-members", msg);
-
-        -- 4, dispatch msg to members who is in conference
-        for i, member in ipairs(members) do
-            local user = member['user'];
-            local name = member['name'];
-            local is_online = member['is_online'];
-            local is_in = member['is_in'];
-
-
-            if isTrue(is_online) and (nil == filter or user == filter) then -- and isTrue(is_in), maybe the state is reliable 
-                local to = user;
-                sendSMS(confPhone, to, "conference-members", msg);
-            end;       
-        end;  
+        dispatchSMS(members, msg, filter);
     end;
 
     service.toSimpleString = function() 
         return formatConference(getInfo());
     end;
 
-    service.sayTo = function(dstUser, from_user, arg0, arg1, arg2, arg3, arg4)
-        local members = service.getMembers(dstUsers, from_user); -- except myself
-        local sentIt;
-        for i, member in ipairs(members) do
-            local is_in = member['is_in'];
-            local to = member['user'];
-
-            sentIt = sendSMS(confPhone, to, arg0, arg1, arg2, arg3, arg4) or sentIt;
+    service.sayTo = function(dstUser, from_user, arg0, arg1, arg2, arg3, arg4, arg5)
+        function v (arg)
+            if nil == arg then return ''; else return arg; end;
         end;
 
-        return sentIt;
+        local members = service.getMembers(dstUsers, from_user); -- except myself
+        
+        local msg = '';
+        if     nil ~= arg5 then msg = string.format('%s\n%s\n%s\n%s\ns\ns\n', v(arg0), v(arg1), v(arg2), v(arg3), v(arg4), v(arg5));
+        elseif nil ~= arg4 then msg = string.format('%s\n%s\n%s\n%s\ns\n',    v(arg0), v(arg1), v(arg2), v(arg3), v(arg4));
+        elseif nil ~= arg3 then msg = string.format('%s\n%s\n%s\n%s\n',       v(arg0), v(arg1), v(arg2), v(arg3));
+        elseif nil ~= arg2 then msg = string.format('%s\n%s\n%s\n',           v(arg0), v(arg1), v(arg2));
+        elseif nil ~= arg1 then msg = string.format('%s\n%s\n',               v(arg0), v(arg1));
+        elseif nil ~= arg0 then msg = string.format('%s\n',                   v(arg0));
+        else msg ='\n';
+        end;
+
+        return dispatchSMS(members, msg);
     end;
 
     return service;
