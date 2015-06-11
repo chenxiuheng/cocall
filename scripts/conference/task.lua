@@ -4,7 +4,7 @@ require('libs.db');
 require('libs.commons');
 require('conference.conferenceService');
 
-local timeout = 700;
+local timeout = 1300;
 local service;
 local conferenceIds = getUpdatedConferenceIds(timeout);
 for i, confPhone in ipairs(conferenceIds) do

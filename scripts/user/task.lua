@@ -2,7 +2,7 @@ local api = freeswitch.API();
 
 require('libs.db');
 require('libs.commons');
-require('conference.conferenceService');
+require('user.userService');
 
 
 deleteRegistrationExtOutOfDate();

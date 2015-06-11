@@ -34,7 +34,7 @@ function executeQuery(sql, callback)
 
     local numRows = 0;
     if dbh:connected() then
-        freeswitch.consoleLog("debug", sql .. "\n") 
+        --freeswitch.consoleLog("debug", sql .. "\n") 
 
         dbh:query(sql, function(row)
             numRows = numRows + 1;
@@ -54,7 +54,7 @@ function executeUpdate(sql)
     if nil == dbh then dbh = freeswitch.Dbh(dsn); end;
 
     if dbh:connected() then
-        --freeswitch.consoleLog("info", sql .. "\n") ;
+        freeswitch.consoleLog("info", sql .. "\n") ;
         dbh:query(sql);
     else 
         freeswitch.consoleLog("warning", "cannot connect to database by " .. dsn .. "\n")                        

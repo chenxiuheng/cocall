@@ -103,8 +103,7 @@ if nil ~= confPhone and nil ~=  from_user then
 
         service.notifyAll();
     elseif action == 'conference_get_members' then
-        local msg = service.getMemberStates();
-        service.sayTo(user, nil, msg);
+        service.getMemberStates(user);
     elseif action == 'conference_set_name' then
         for new_name in string.gmatch(params, "([^\n]*)\n") do
             if nil ~= new_name and "" ~= new_name then

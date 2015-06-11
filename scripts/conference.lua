@@ -23,6 +23,7 @@ if session:ready() then
     local service = newConferenceService(conf_num);
     local members = service.getMembers(caller_id);
     for i, member in ipairs(members)  do
+        service.getMemberStates(caller_id);
 
         --  because of 
         freeswitch.consoleLog("WLRNING", "WAITING: \n")
@@ -33,6 +34,7 @@ if session:ready() then
         local conf_name = string.format("%s@ultrawideband", conf_num, caller_id);
         session:execute("conference", conf_name)
         freeswitch.consoleLog("NOTICE", "create template conference " .. conf_name);
+
     end;
 
 

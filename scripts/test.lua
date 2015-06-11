@@ -4,10 +4,9 @@ require('conference.conferenceService');
 
 freeswitch.API():execute('bgapi', "lua conference/task.lua");
 
-local ids = getUpdatedConferenceIds(7000 + 100);
-for k, v in pairs(ids) do
-    print("kva", k, v);
-end;
+local confPhone = '340000911';
+local    service = newConferenceService(confPhone);
+    service.dispatchMemberStates();
 
 
 local toUsers = {};

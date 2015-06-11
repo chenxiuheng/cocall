@@ -604,14 +604,16 @@ function newConferenceService(confPhone)
         releaseInfo();
     end;
 
-    service.getMemberStates = function ()
+    service.getMemberStates = function (dstUser)
         -- 1, get member's states
         local members;
         members = getConferenceMembers(confPhone);
         
         -- 2, build msg
         local msg = asMsg(members);
-        return msg;
+
+        -- 3. send to the user
+        sendSMS(confPhone, dstUser, msg);
     end;
 
     service.dispatchMemberStates = function ()

@@ -27,7 +27,7 @@ print(">>>> delete from t_registration_ext");
 local userClock = 0;
 local conferenceClock = 0;
 while true do
-    freeswitch.msleep(25);
+    freeswitch.msleep(100);
 
     userClock = userClock + 25;
     conferenceClock = conferenceClock + 25;
@@ -37,7 +37,7 @@ while true do
         freeswitch.API():execute('bgapi', "lua user/task.lua");
     end;
 
-    if conferenceClock > 500 then
+    if conferenceClock > 700 then
         conferenceClock = 0;
         freeswitch.API():execute('bgapi', "lua conference/task.lua");
     end;
