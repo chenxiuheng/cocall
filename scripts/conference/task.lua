@@ -10,6 +10,7 @@ local conferenceIds = getUpdatedConferenceIds(timeout);
 for i, confPhone in ipairs(conferenceIds) do
     service = newConferenceService(confPhone);
     service.dispatchMemberStates();
+    clearConferenceUpdated(confPhone);
 end;
 
 freeswitch.consoleLog('debug', 'dispatch conference states to its members \n');
