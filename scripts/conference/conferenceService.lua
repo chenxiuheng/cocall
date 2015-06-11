@@ -32,7 +32,7 @@ function getConferenceMembers(confPhone, user, except)
         " mem.c_member_type as type, "..
         " mem.n_member_id as member_id, "..
         " mem.n_can_speak as can_speak, "..
-        " (select count(*) from t_registration_ext as ext  where ext.user_id=mem.c_phone_no ) as is_online, "..
+        " (select count(*) from t_registration_ext as ext  where ext.user_id=mem.c_phone_no and expired > now()) as num_reg, "..
         " mem.n_is_modirator as is_moderator "..
         " FROM "..
         " t_conference_member AS mem "..
@@ -59,8 +59,10 @@ function getConferenceMembers(confPhone, user, except)
     local memberIndex = 1;    
     local members = {};
     executeQuery(sql, function(row)
-        if not isTrue(row['is_online']) then
-            row['is_in'] = '2';
+        if row['num_reg'] == '0' then
+            row['is_online'] = '1';
+        else
+            row['is_online'] = '2';
         end;
 
         members[memberIndex] = row;
@@ -73,7 +75,16 @@ end;
 function setConferenceUpdated(confPhone)
     local sql;
     sql = sqlstring.format(
-            "update t_conference set d_updated = now() where c_phone_no='%s'",
+            "update t_conference set n_updated = 1 where c_phone_no='%s'",
+            confPhone
+        );
+    
+    executeUpdate(sql);
+end;
+function clearConferenceUpdated(confPhone)
+    local sql;
+    sql = sqlstring.format(
+            "update t_conference set n_updated = 2 where c_phone_no='%s'",
             confPhone
         );
     
@@ -158,7 +169,7 @@ end;
 function getUpdatedConferenceIds(milliseconds)
     local sql;
     sql = sqlstring.format(
-            "select c_phone_no from t_conference where now() - d_updated  < INTERVAL '%s millisecond' and  n_is_running = 1",
+            "select c_phone_no from t_conference where n_updated  = 1 and  n_is_running = 1",
             milliseconds
         );
 
