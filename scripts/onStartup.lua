@@ -37,7 +37,7 @@ while true do
         freeswitch.API():execute('bgapi', "lua user/task.lua");
     end;
 
-    if conferenceClock > 700 then
+    if conferenceClock > 1300 then
         conferenceClock = 0;
         freeswitch.API():execute('bgapi', "lua conference/task.lua");
     end;
