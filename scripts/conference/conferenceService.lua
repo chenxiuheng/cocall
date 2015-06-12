@@ -60,9 +60,9 @@ function getConferenceMembers(confPhone, user, except)
     local members = {};
     executeQuery(sql, function(row)
         if row['num_reg'] == '0' then
-            row['is_online'] = '1';
-        else
             row['is_online'] = '2';
+        else
+            row['is_online'] = '1';
         end;
 
         members[memberIndex] = row;
@@ -166,11 +166,10 @@ end;
 
 
 
-function getUpdatedConferenceIds(milliseconds)
+function getUpdatedConferenceIds()
     local sql;
     sql = sqlstring.format(
-            "select c_phone_no from t_conference where n_updated  = 1 and  n_is_running = 1",
-            milliseconds
+            "select c_phone_no from t_conference where n_updated  = 1 and  n_is_running = 1"
         );
 
     local ids = {};    
@@ -582,6 +581,46 @@ function newConferenceService(confPhone)
         end;
 
         releaseInfo();
+    end;
+
+    service.changeVideoFloor = function(user)
+        local moderator_is_in = false;
+
+        -- moderator is in, set vid-floor
+        local members = service.getMembers('moderator');
+        for i, member in ipairs(members) do
+            local is_in = member['is_in'];
+            local member_id = member['member_id'];
+
+            if user == member['user'] then
+                freeswitch.API():execute('conference', service.getPhoneNo()..' vid-floor '..member_id ..' force');
+                logger.info("user[", user , "] is moderator set vid-floor force & return;");
+                return true;
+            end;
+
+            if isTrue(is_in) then
+                moderator_is_in = true;
+            end;
+        end;
+
+        -- moderator NOT in, set vid-floor
+        if not moderator_is_in then
+            members = service.getMembers(user);
+            for i, member in ipairs(members) do
+                local is_in = member['is_in'];
+                local member_id = member['member_id'];
+                
+                if isTrue(is_in) then
+                    freeswitch.API():execute('conference', service.getPhoneNo()..' vid-floor '..member_id ..' force');
+                    logger.warn("moderator is NOT in conference, user[", user , "] has been setted vid-floor force & return;");
+                    return true;
+                end;
+            end;
+        end;
+
+        -- do nothing
+        logger.warn("something wrong, ignore set vid-floor for user[", user , "] & return;");
+        return false;
     end;
 
     service.setModerator = function(user)

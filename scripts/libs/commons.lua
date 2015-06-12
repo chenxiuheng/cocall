@@ -61,7 +61,7 @@ function getLogger(prefix)
 
     function output(level, arg0, arg1, arg2, arg3, arg4, arg5) 
         if nil ~= prefix then
-            freeswitch.consoleLog(level, prefix..'\n');
+            freeswitch.consoleLog('debug', prefix..'\n');
         end;
 
         freeswitch.consoleLog(level, asMsg(arg0, arg1, arg2, arg3, arg4, arg5));

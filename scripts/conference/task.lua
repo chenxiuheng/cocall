@@ -11,8 +11,8 @@ for i, confPhone in ipairs(conferenceIds) do
     service = newConferenceService(confPhone);
     service.dispatchMemberStates();
     clearConferenceUpdated(confPhone);
+    freeswitch.consoleLog('info', 'dispatch conference['..confPhone..'] states to its members \n');
 end;
 
-freeswitch.consoleLog('debug', 'dispatch conference states to its members \n');
 
 

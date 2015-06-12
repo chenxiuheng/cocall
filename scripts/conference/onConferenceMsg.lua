@@ -66,6 +66,8 @@ if nil ~= confPhone and nil ~=  from_user then
         end;
 
         service.notifyAll();
+    elseif action == 'conference_change_video' then
+        service.changeVideoFloor(from_user);
     elseif action =='conference_set_moderator' then
         local lastModerator = service.getModerator();
 

@@ -100,6 +100,22 @@ if not isTemplateConference then
         end;
 
         service.notifyAll();
+    elseif action == 'video-floor-change' then
+        local old_id = event:getHeader('Old-ID');
+        local new_id = event:getHeader('New-ID');
+
+        if new_id ~= 'none' then
+            local members = service.getMembers('moderator');
+            for i, member in ipairs(members) do
+                local is_in = member['is_in'];
+                local memberId = member['member_id'];
+                
+                if isTrue(is_in) and memberId ~= new_id then
+                    api:execute('conference', confPhone..' vid-floor '..memberId);
+                    logger.warn("conference ", confPhone, " speaker is NOT moderator force it.", new_id, '->', memberId);
+                end;
+            end;
+        end;
     elseif action == 'start-talking' or action == 'stop-talking' then
         local energy = event:getHeader('Current-Energy');
         local level = event:getHeader('Energy-Level');
