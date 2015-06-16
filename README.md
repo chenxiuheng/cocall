@@ -1,3 +1,5 @@
+gg4r84
+
 rm -f /usr/local/freeswitch/db/*.db
 
 
