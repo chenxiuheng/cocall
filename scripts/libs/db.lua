@@ -41,7 +41,7 @@ function executeQuery(sql, callback)
 
     local numRows = 0;
     if dbh:connected() then
-        --freeswitch.consoleLog("debug", sql .. "\n")
+        freeswitch.consoleLog("debug", sql .. "\n")
 
         dbh:query(sql, function(row)
             numRows = numRows + 1;

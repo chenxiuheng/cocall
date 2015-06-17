@@ -18,7 +18,6 @@ function boolean (value)
     return false;
 end;
 
-local logger = getLogger('conference');
 
 ---------------   Conference DAO ---------------------------------------------
 function getConferenceMembers(confPhone, user, except)
@@ -52,7 +51,7 @@ function getConferenceMembers(confPhone, user, except)
         sql = sql .. "  and n_is_modirator = 1";
     elseif 'moderator' == except then
         sql = sql .. "  and n_is_modirator <> 1";
-    elseif nil ~= user then
+    elseif nil ~= except then
         sql = sql .. sqlstring.format(" AND mem.c_phone_no<>'%s'", except);
     end;
 
@@ -118,10 +117,10 @@ function getConferenceMemberEnergies (confPhone)
     local sql;
     sql = sqlstring.format(
             "select c_phone_no as user, "..
-            "       n_cur_engery as cur_engery, "..
-            "       n_engery_level as engery_level"..
+            "       n_cur_engery as cur_energy, "..
+            "       n_engery_level as energy_level"..
             " from t_conference_member"..
-            "  where c_conference_phone_no = '%s'  and now() - d_speak < interval '%' millsecond"..
+            "  where c_conference_phone_no = '%s'  and now() - d_speak < interval '%s millisecond'"..
             " and n_engery_level is not null",
             confPhone, CONFERENCE_MEMBER_ENERGY_EXPIRSED
         );
@@ -144,7 +143,7 @@ function updateConferenceMemberEnergy(confPhone, user, energy, energy_level)
     sql = sqlstring.format(
             "update t_conference_member set n_is_in = 1, d_speak = now(), n_cur_engery = %s, n_engery_level = %s "..
             " where c_conference_phone_no = '%s' and c_phone_no = '%s'",
-            CONFERENCE_MEMBER_ENERGY_EXPIRSED, energy, energy_level, confPhone, user
+            energy, energy_level, confPhone, user
         );
     
     executeUpdate(sql);
@@ -353,6 +352,8 @@ end;
 
 -- API for conference
 function newConferenceService(confPhone)
+    local logger = getLogger('conferenceS['..confPhone..']');
+
     local info = nil;
     local service = {};
 
@@ -377,53 +378,6 @@ function newConferenceService(confPhone)
         batchSendSMS(confPhone, to_users, msg);
     end;
 
-    function asMsg(members)
-        local msg = 'conference-members'; -- msg to dispatch to members
-
-        local oct_to_hex = {}
-        oct_to_hex[0] = '0';
-        oct_to_hex[1] = '1';
-        oct_to_hex[2] = '2';
-        oct_to_hex[3] = '3';
-        oct_to_hex[4] = '4';
-        oct_to_hex[5] = '5';
-        oct_to_hex[6] = '6';
-        oct_to_hex[7] = '7';
-        oct_to_hex[8] = '8';
-        oct_to_hex[9] = '9';
-        oct_to_hex[10] = 'A';
-        oct_to_hex[11] = 'B';
-        oct_to_hex[12] = 'C';
-        oct_to_hex[13] = 'D';
-        oct_to_hex[14] = 'E';
-        oct_to_hex[15] = 'F';
-        for i, member in ipairs(members) do
-            local user = member['user'];
-            local name = member['name'];
-            local is_online = member['is_online'];
-            local is_in = member['is_in'];
-            local can_speak = member['can_speak'];
-            local is_moderator = member['is_moderator'];
-            
-            local flags = 0;
-
-            --  'online';
-            if isTrue(is_online) then flags = flags + 8; end;
-
-            -- isInConference;
-            if isTrue(is_in) then flags = flags + 4; end;
-
-            -- unmute
-            if isTrue(can_speak) then flags = flags + 2; end;
-
-            -- is_moderator
-            if isTrue(is_moderator) then flags = flags + 1;end;
-          
-            msg = msg .. sqlstring.format('\n%s;%s;%s;', user, name, oct_to_hex[flags]);
-        end;
-
-        return msg;
-    end;
 
 
     service.getPhoneNo = function()
@@ -726,13 +680,78 @@ function newConferenceService(confPhone)
         releaseInfo();
     end;
 
+    service.dispatchMemberEnergies = function ()
+        local energy_msg = 'conference-energy';
+        local energies = getConferenceMemberEnergies(confPhone);
+        for i, energy in ipairs(energies) do
+            energy_msg = energy_msg..string.format("\n%s;%s/%s", energy['user'], energy['cur_energy'], energy['energy_level']);
+        end;
+
+        if 'conference-energy' == energy_msg then
+            logger.debug('No member energies to dispatch');
+        else
+            local members = getConferenceMembers(confPhone);
+            dispatchSMS(members, energy_msg);
+        end;
+    end;
+
+
+    function formatAsSMS(members)
+
+        local oct_to_hex = {}
+        oct_to_hex[0] = '0';
+        oct_to_hex[1] = '1';
+        oct_to_hex[2] = '2';
+        oct_to_hex[3] = '3';
+        oct_to_hex[4] = '4';
+        oct_to_hex[5] = '5';
+        oct_to_hex[6] = '6';
+        oct_to_hex[7] = '7';
+        oct_to_hex[8] = '8';
+        oct_to_hex[9] = '9';
+        oct_to_hex[10] = 'A';
+        oct_to_hex[11] = 'B';
+        oct_to_hex[12] = 'C';
+        oct_to_hex[13] = 'D';
+        oct_to_hex[14] = 'E';
+        oct_to_hex[15] = 'F';
+
+        local msg = 'conference-members';
+        for i, member in ipairs(members) do
+            local user = member['user'];
+            local name = member['name'];
+            local is_online = member['is_online'];
+            local is_in = member['is_in'];
+            local can_speak = member['can_speak'];
+            local is_moderator = member['is_moderator'];
+            
+            local flags = 0;
+
+            --  'online';
+            if isTrue(is_online) then flags = flags + 8; end;
+
+            -- isInConference;
+            if isTrue(is_in) then flags = flags + 4; end;
+
+            -- unmute
+            if isTrue(can_speak) then flags = flags + 2; end;
+
+            -- is_moderator
+            if isTrue(is_moderator) then flags = flags + 1;end;
+          
+            msg = msg .. sqlstring.format('\n%s;%s;%s;', user, name, oct_to_hex[flags]);
+        end;
+
+        return msg;
+    end;
+
     service.getMemberStates = function (dstUser)
         -- 1, get member's states
         local members;
         members = getConferenceMembers(confPhone);
         
         -- 2, build msg
-        local msg = asMsg(members);
+        local msg = formatAsSMS(members);
 
         -- 3. send to the user
         sendSMS(confPhone, dstUser, msg);
@@ -745,32 +764,13 @@ function newConferenceService(confPhone)
         
         
         -- 2, build msg
-        local msg = asMsg(members);
+        local msg = formatAsSMS(members);
 
         dispatchSMS(members, msg);
     end;
 
-    service.dispatchMemberEnergies = function()
-        -- 1, get member's states
-        local members;
-        members = getConferenceMembers(confPhone);
-        
-        local msg = nil;
-        local energies = getConferenceMemberEnergies(confPhone);
-        for i, engery in ipairs(energies) do
-            if nil ~= msg then
-                msg = 'conference-energy';
-            end;
 
-            msg = msg..string.format("\n%s:%s/%s", engery['user'], engery['cur_engery'], engery['engery_level']);
-        end;
-
-        if nil ~= msg then
-            dispatchSMS(members, msg);
-        end;
-    end;
-
-    service.notifyAll = function() 
+    service.notifyAll = function () 
         setConferenceUpdated(confPhone);
     end;
 

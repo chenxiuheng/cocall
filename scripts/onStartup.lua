@@ -45,7 +45,7 @@ while true do
         freeswitch.API():execute('luarun', "conference/task_member_list.lua");
     end;
 
-    if conferenceEnergyClock > 250 then
+    if conferenceEnergyClock > 500 then
         conferenceEnergyClock = 0;
         freeswitch.API():execute('luarun', "conference/task_member_energy.lua");
     end;

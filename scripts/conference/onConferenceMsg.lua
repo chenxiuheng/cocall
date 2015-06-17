@@ -10,7 +10,7 @@ local body = message:getBody();
 
 -- srvice to deal with action(s)
 local service = newConferenceService(confPhone);
-local logger = getLogger('conference.msg');
+local logger = getLogger('msg#'..confPhone);
 logger.notice(from_user, '/', confPhone, "said: ", body);
 
 if nil ~= confPhone and nil ~=  from_user then
@@ -56,12 +56,14 @@ if nil ~= confPhone and nil ~=  from_user then
     elseif action == 'conference_mute'  then
         for user in string.gmatch(params, "([^\n]*)\n") do
             service.mute(user);
+            logger.notice(from_user, 'mute', user);
         end;
 
         service.notifyAll();
     elseif action == 'conference_unmute' then
         for user in string.gmatch(params, "([^\n]*)\n") do
             service.unmute(user);
+            logger.notice(from_user, 'unmute', user);
         end;
 
         service.notifyAll();
