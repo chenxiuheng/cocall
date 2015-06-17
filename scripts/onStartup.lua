@@ -24,22 +24,30 @@ sql = string.format('delete from t_registration_ext');
 executeUpdate(sql);
 print(">>>> delete from t_registration_ext");
 
+local clock_rate = 100;
 local userClock = 0;
 local conferenceClock = 0;
+local conferenceEnergyClock = 0;
 while true do
-    freeswitch.msleep(100);
+    freeswitch.msleep(clock_rate);
 
-    userClock = userClock + 25;
-    conferenceClock = conferenceClock + 25;
+    userClock = userClock + clock_rate;
+    conferenceClock = conferenceClock + clock_rate;
+    conferenceEnergyClock = conferenceEnergyClock + clock_rate;
 
     if userClock > (60 * 1000) then
         userClock = 0;
-        freeswitch.API():execute('bgapi', "lua user/task.lua");
+        freeswitch.API():execute('luarun', "user/task.lua");
     end;
 
     if conferenceClock > 1300 then
         conferenceClock = 0;
-        freeswitch.API():execute('bgapi', "lua conference/task.lua");
+        freeswitch.API():execute('luarun', "conference/task_member_list.lua");
+    end;
+
+    if conferenceEnergyClock > 250 then
+        conferenceEnergyClock = 0;
+        freeswitch.API():execute('luarun', "conference/task_member_energy.lua");
     end;
 end;
 

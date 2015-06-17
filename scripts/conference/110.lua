@@ -18,7 +18,8 @@ local to_user = message:getHeader('to_user');
 local user_name = message:getHeader('user_name');
 local user_id = message:getHeader('user_id');
 local body = string.gsub(message:getBody()..'\n', '<br>', '\n');
-
+local logger = getLogger('conference.110');
+logger.info(body);
 
 if nil == user_id then user_id = user end;
 if nil == user then
@@ -37,9 +38,7 @@ if nil ~= i then
     action = string.sub(body, 0, i-1);
     params = string.sub(body, i+1);
 
-    local logger = getLogger('com.thunisoft.cocall.conference.110');
-    logger.info('action:', action);
-    logger.info('params:', params);
+
 
     local service;  -- conference service
 

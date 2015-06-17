@@ -112,6 +112,45 @@ function updateConferenceMemberFields(confPhone, user, field, value)
     executeUpdate(sql);
 end;
 
+local CONFERENCE_MEMBER_ENERGY_EXPIRSED = 1000;
+
+function getConferenceMemberEnergies (confPhone)
+    local sql;
+    sql = sqlstring.format(
+            "select c_phone_no as user, "..
+            "       n_cur_engery as cur_engery, "..
+            "       n_engery_level as engery_level"..
+            " from t_conference_member"..
+            "  where c_conference_phone_no = '%s'  and now() - d_speak < interval '%' millsecond"..
+            " and n_engery_level is not null",
+            confPhone, CONFERENCE_MEMBER_ENERGY_EXPIRSED
+        );
+
+    local rows = {};
+    executeQuery(sql, function(row)
+        table.insert(rows, row);
+    end);
+
+    return rows;
+end;
+
+function updateConferenceMemberEnergy(confPhone, user, energy, energy_level)
+    if nil == energy_level or 'nil' == energy_level or '' == energy_level then
+        energy_level = 300;
+    end;
+
+
+    local sql;
+    sql = sqlstring.format(
+            "update t_conference_member set n_is_in = 1, d_speak = now(), n_cur_engery = %s, n_engery_level = %s "..
+            " where c_conference_phone_no = '%s' and c_phone_no = '%s'",
+            CONFERENCE_MEMBER_ENERGY_EXPIRSED, energy, energy_level, confPhone, user
+        );
+    
+    executeUpdate(sql);
+end;
+
+
 function setConferenceModerator(confPhone, user)
     local sql;
     sql = sqlstring.format(
@@ -139,16 +178,35 @@ function setConferenceName(confPhone, newName)
 end;
 
 function setConferenceMemberIn (confPhone, user, memberId)
-    if nil == user then return ;end;
-
     local sql;
-    sql = sqlstring.format(
-            "update t_conference_member set n_is_in=1, n_member_id=%s "..
-            " where n_is_in<>1 and c_conference_phone_no = '%s' and c_phone_no='%s' ",
-            memberId, confPhone, user
-        ); 
+    local last_member_id;
+    local is_modirator = false
 
-    executeUpdate(sql);
+    if nil ~= user then 
+        --1, find last member_id;
+        sql = sqlstring.format(
+                "select n_member_id, n_is_modirator from t_conference_member where "..
+                " c_conference_phone_no='%s' and c_phone_no='%s' ",
+                confPhone, user
+            );
+        local rowCount = executeQuery(sql, function(row)
+            last_member_id = row['n_member_id'];
+            is_modirator = isTrue(row['n_is_modirator']);
+        end);
+
+        --2, update and set new member_id
+        if (rowCount > 0) then
+            sql = sqlstring.format(
+                    "update t_conference_member set n_is_in=1, n_member_id=%s "..
+                    " where c_conference_phone_no = '%s' and c_phone_no='%s' ",
+                    memberId, confPhone, user
+                ); 
+
+            executeUpdate(sql);
+        end;
+    end;
+
+    return last_member_id, is_modirator;
 end;
 
 function setConferenceMemberOut(confPhone, user, memberId)
@@ -162,10 +220,23 @@ function setConferenceMemberOut(confPhone, user, memberId)
         confPhone, user, memberId
     );
     executeUpdate(sql);
+
 end;
 
 
+function getRunningConferenceIds()
+    local sql;
+    sql = sqlstring.format(
+            "select c_phone_no from t_conference where n_is_running = 1"
+        );
 
+    local ids = {};    
+    executeQuery(sql, function(row)
+        table.insert(ids, row['c_phone_no']);
+    end);
+
+    return ids;
+end;
 function getUpdatedConferenceIds()
     local sql;
     sql = sqlstring.format(
@@ -476,9 +547,11 @@ function newConferenceService(confPhone)
         local members = getConferenceMembers(confPhone, user);
         for i, member in ipairs(members) do
             local member_id    = member['member_id'];
-            freeswitch.API():execute('conference', confPhone..' kick '.. member_id);
-            logger.info('kick ', member['user'], 'from conference[', confPhone, '] member-id=', member_id);
-            sendSMS(confPhone, member['user'], 'conference-kicked', 'you are kick by ' .. operator);
+            if isTrue(member['is_in']) and nil ~= member_id then
+                freeswitch.API():execute('conference', confPhone..' kick '.. member_id);
+                logger.info('kick ', member['user'], 'from conference[', confPhone, '] member-id=', member_id);
+                sendSMS(confPhone, member['user'], 'conference-kicked', 'you are kick by ' .. operator);
+            end;
         end;
 
         -- delete from db
@@ -539,7 +612,7 @@ function newConferenceService(confPhone)
             local is_moderator = isTrue(member['is_moderator']);
 
             if non_moderator and is_moderator then
-                    -- ignore moderator
+                    -- ignore because current is moderator but he want to mute non_moderator
             else
                 if isTrue(is_in) then
                     freeswitch.API():execute('conference', confPhone ..' mute '.. memberId);
@@ -572,7 +645,7 @@ function newConferenceService(confPhone)
             local is_moderator = member['is_c'];
 
             if non_moderator and is_moderator then
-                    -- ignore moderator
+                    -- ignore because current is moderator but he want to unmute non_moderator
             else
                 if isTrue(is_in) then
                     freeswitch.API():execute('conference', confPhone ..' unmute '.. memberId);
@@ -646,9 +719,8 @@ function newConferenceService(confPhone)
             local is_in = member['is_in'];
             local member_id = member['member_id'];
 
-            if  isTrue(is_in) then
-                freeswitch.API():execute('conference', service.getPhoneNo()..' vid-floor '..member_id ..' force');
-            end;
+            freeswitch.API():execute('conference', service.getPhoneNo()..' vid-floor '..member_id ..' force');
+            logger.warn('conference', service.getPhoneNo(), "set member", member_id , " vid-floor");
         end;
 
         releaseInfo();
@@ -676,6 +748,26 @@ function newConferenceService(confPhone)
         local msg = asMsg(members);
 
         dispatchSMS(members, msg);
+    end;
+
+    service.dispatchMemberEnergies = function()
+        -- 1, get member's states
+        local members;
+        members = getConferenceMembers(confPhone);
+        
+        local msg = nil;
+        local energies = getConferenceMemberEnergies(confPhone);
+        for i, engery in ipairs(energies) do
+            if nil ~= msg then
+                msg = 'conference-energy';
+            end;
+
+            msg = msg..string.format("\n%s:%s/%s", engery['user'], engery['cur_engery'], engery['engery_level']);
+        end;
+
+        if nil ~= msg then
+            dispatchSMS(members, msg);
+        end;
     end;
 
     service.notifyAll = function() 

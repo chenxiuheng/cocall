@@ -15,10 +15,16 @@ function sqlstring.format (format, ...)
     local index = 1;
     local sql = '';
     local param;
+    local arg = nil;
     for match in string.gmatch(format..'%s', "(.-)%%s") do
         if nil ~= args[index] then
-            -- replace "'" to "''" for postgres
-            sql = sql .. match .. string.gsub(args[index], "'", "''");
+            arg = args[index];
+            arg = string.gsub(arg, "'", "''"); -- replace "'" to "''" for postgres
+            arg = string.gsub(arg, ";", " ");  -- special char used for send sms api 
+            arg = string.gsub(arg, "\r", " "); -- 
+            arg = string.gsub(arg, "\n", "  ");
+        
+            sql = sql .. match .. arg;
         else
             sql = sql .. match;
         end;

@@ -10,6 +10,8 @@ local body = message:getBody();
 
 -- srvice to deal with action(s)
 local service = newConferenceService(confPhone);
+local logger = getLogger('conference.msg');
+logger.notice(from_user, '/', confPhone, "said: ", body);
 
 if nil ~= confPhone and nil ~=  from_user then
     local cmd = string.gsub(body..'\n', '<br>', '\n');
@@ -17,9 +19,6 @@ if nil ~= confPhone and nil ~=  from_user then
     local action = string.sub(cmd, 0, i-1);
     local params = string.sub(cmd, i+1);
 
-    local logger = getLogger('com.thuniosft.cocall.conference.api');
-    logger.info('action:', action);
-    logger.info('params:', params);
 
     if action == 'conference_add_member' then
         local success = true;

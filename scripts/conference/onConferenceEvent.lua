@@ -32,15 +32,8 @@ if not isTemplateConference then
 
     local service = newConferenceService(confPhone);
     local action = event:getHeader('Action');
-    local logger = getLogger('com.thunisoft.cocall.conference.events');
+    local logger = getLogger('conference.events');
     logger.info(confPhone, action, "member:", user, '/', memberId);
-
-
-    -- user state offen be no in, why ?
-    if action == 'start-talking' then
-        setConferenceMemberIn(confPhone, user, memberId);
-    end;
-
 
     -- events
     if action == 'conference-create' then
@@ -48,25 +41,21 @@ if not isTemplateConference then
     elseif action =='conference-destroy' then
         service.setIsRunning(false);
     elseif action =='add-member' then 
-        setConferenceMemberIn(confPhone, user, memberId);
+        -- save as DB
+        local last_member_id;
+        local is_moderator;
+        last_member_id, is_moderator = setConferenceMemberIn(confPhone, user, memberId);
 
         -- kick the member use same user no
-        local members = getConferenceMembers(confPhone, user);
-        for i, member in pairs(members) do
-            if memberId ~= member['member_id'] and nil ~= member['member_id'] then
-                api:execute('conference', confPhone..' kick '.. member['member_id']);
-                logger.info("conference ", confPhone, " kick ", member['member_id']);
-            end;
+        if nil ~= last_member_id then
+            api:execute('conference', confPhone..' kick '..last_member_id);
+            logger.warn("conference ", confPhone, " kick ", last_member_id);
         end;
 
         -- change moderator's screen if I am the moderator
-        local members = getConferenceMembers(confPhone, "moderator");
-        for i, member in pairs(members) do
-
-            if member['user'] == user then
-                api:execute('conference', confPhone..' vid-floor '..memberId.." force");
-                logger.info("conference ", confPhone, " set vid-floor ", user, ' because of he is moderator');
-            end;
+        if is_moderator then
+            api:execute('conference', confPhone..' vid-floor '..memberId.." force");
+            logger.info("conference ", confPhone, " set vid-floor ", user, ' because of he is moderator');
         end;
 
         service.notifyAll();
@@ -103,29 +92,43 @@ if not isTemplateConference then
     elseif action == 'video-floor-change' then
         local old_id = event:getHeader('Old-ID');
         local new_id = event:getHeader('New-ID');
+        logger.info("conference ", confPhone, " video-floor-change  ", old_id, ' --> ', new_id);
 
-        if new_id ~= 'none' then
+        if new_id ~= 'none' and nil ~= new_id then
             local members = service.getMembers('moderator');
             for i, member in ipairs(members) do
                 local is_in = member['is_in'];
-                local memberId = member['member_id'];
-                
-                if isTrue(is_in) and memberId ~= new_id then
-                    api:execute('conference', confPhone..' vid-floor '..memberId);
-                    logger.warn("conference ", confPhone, " speaker is NOT moderator force it.", new_id, '->', memberId);
+                logger.info("conference ", confPhone, " user  = ", user, ', moderator = ', member['user']);
+                logger.info("conference ", confPhone, " moderator is_in = ", isTrue(is_in), ', member_id = ', member['member_id']);
+
+                if not isTrue(is_in ) then
+                    logger.warn("conference ", confPhone, " moderator is NOT online, change to member_id = ", new_id);
+                elseif member['member_id'] ~= new_id then
+                    local cmd_video_floor_change = confPhone..' vid-floor '.. member['member_id']..' force';
+                    api:execute('conference', cmd_video_floor_change);
+                    service.notifyAll();
+
+                    logger.warn("execute conference ", cmd_video_floor_change);
                 end;
             end;
         end;
-    elseif action == 'start-talking' or action == 'stop-talking' then
+
+    elseif action == 'start-talking' then
         local energy = event:getHeader('Current-Energy');
         local level = event:getHeader('Energy-Level');
         if ('0' == level or 0 == leven) then
            level = '300'; -- default is 300 in freeswitch
         end;
 
-
-        local msg = string.format("%s;%s/%s", user, energy, level);
-        service.sayTo('all', user, 'conference-energy', msg);
+        updateConferenceMemberEnergy(confPhone, user, energy, level);
+    elseif action == 'stop-talking' then
+        local energy = '0';
+        local level = event:getHeader('Energy-Level');
+        if ('0' == level or 0 == leven) then
+           level = '300'; -- default is 300 in freeswitch
+        end;
+    
+        updateConferenceMemberEnergy(confPhone, user, energy, level);
     end;
 else
     local action = event:getHeader('Action');

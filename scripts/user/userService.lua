@@ -26,25 +26,11 @@ function deleteRegistrationExtOutOfDate()
 end;
 
 function saveOrUpdateUser(id, phone, name, pass)
-    local sql;
-    sql = string.format("select c_id from t_user where c_id = '%s' ", id);
+    if nil == pass then pass = '1234'; end;
 
-    -- use default pass
-    if (nil == pass) then pass = '1234'; end;
-    
-    -- use default name
-    if (nil == name) then name = id; end;
-
-    local numRows = executeQuery(sql);
-
-    -- insert if not found
-    if numRows  == 0 then
-        sql = string.format('insert into t_user (c_id, c_phone_no, c_name, c_passwd, d_login)'..
-                " values ('%s', '%s', '%s', '%s', now())",
-                id, id, name, pass);
-        executeUpdate(sql);
-    end;
-
+    -- it's no use to save DB, so do nothing
+    local log = string.format("%s login, and use passwd '%s', name = %s\n", phone, pass, name);
+    freeswitch.consoleLog('notice', log);
 
     return pass;
 end;

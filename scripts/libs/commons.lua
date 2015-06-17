@@ -61,10 +61,10 @@ function getLogger(prefix)
 
     function output(level, arg0, arg1, arg2, arg3, arg4, arg5) 
         if nil ~= prefix then
-            freeswitch.consoleLog('debug', prefix..'\n');
+            freeswitch.consoleLog(level, '['..prefix..']'..asMsg(arg0, arg1, arg2, arg3, arg4, arg5));
+        else
+            freeswitch.consoleLog(level, asMsg(arg0, arg1, arg2, arg3, arg4, arg5));
         end;
-
-        freeswitch.consoleLog(level, asMsg(arg0, arg1, arg2, arg3, arg4, arg5));
     end;
 
     log.debug = function(arg0, arg1, arg2, arg3, arg4, arg5)
@@ -73,6 +73,10 @@ function getLogger(prefix)
 
     log.info = function(arg0, arg1, arg2, arg3, arg4, arg5)
         output('INFO', arg0, arg1, arg2, arg3, arg4, arg5);
+    end;
+
+    log.notice = function(arg0, arg1, arg2, arg3, arg4, arg5)
+        output('NOTICE', arg0, arg1, arg2, arg3, arg4, arg5);
     end;
 
      log.warn = function(arg0, arg1, arg2, arg3, arg4, arg5)
@@ -143,7 +147,7 @@ function batchSendSMS(from_user, toUsers, ...)
         event:chat_execute("send");
         hasSentIt = true;
 
-        local logger = getLogger('com.thunisoft.cocall.sms');
+        local logger = getLogger('sms');
         logger.debug(from_full, '-->', to, '\n', msg);
 
     end);

@@ -17,31 +17,34 @@ session:answer();
 session:setHangupHook("session_hangup_hook")
 
 
-
 local foundIt = false;
-if session:ready() then
-    local service = newConferenceService(conf_num);
-    local members = service.getMembers(caller_id);
-    for i, member in ipairs(members)  do
-        service.getMemberStates(caller_id);
+local service = newConferenceService(conf_num);
+local members = service.getMembers(caller_id);
+for i, member in ipairs(members)  do
+    service.getMemberStates(caller_id);
 
-        --  because of 
-        freeswitch.consoleLog("WLRNING", "WAITING: \n")
-        freeswitch.msleep(3 * 1000);
-        freeswitch.consoleLog("WARNING", "stop WAITING: \n")
+    --  wait user audio+video send to FS
+    --     if don't wait, FS will has problem(s) when punch NAT
+    freeswitch.consoleLog("info", string.format("user %s waiting to join conference %s\n", caller_id, conf_num));
+    freeswitch.msleep(2 * 1000); -- because default RTP timeout is 1800 
 
+
+    -- if session is NOT disavailable
+    if session:ready() then
         foundIt = true;
         local conf_name = string.format("%s@ultrawideband", conf_num, caller_id);
         session:execute("conference", conf_name)
-        freeswitch.consoleLog("NOTICE", "create template conference " .. conf_name);
 
+        freeswitch.consoleLog("notice", string.format("user %s joined conference %s\n", caller_id, conf_num));
+    else
+        freeswitch.consoleLog("warning", string.format("session NOT ready, user %s canceled join conference %s \n", caller_id, conf_num));
     end;
+end;
 
 
-    if not foundIt then
-        sendSMS(conf_num, caller_id, 'WARNING', string.format("caller[%s] not belong conference[%s]", caller_id, conf_num));
-        session:hangup();
-    end;
+if not foundIt then
+    sendSMS(conf_num, caller_id, 'WARNING', string.format("caller[%s] not belong conference[%s]", caller_id, conf_num));
+    session:hangup();
 end;
 
 
