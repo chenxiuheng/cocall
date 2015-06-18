@@ -1,9 +1,4 @@
-local api = freeswitch.API();
-local scripts_base_dir = api:execute("global_getvar", "base_dir")..'/scripts';
-if nil == string.find(package.path, scripts_base_dir) then
-    package.path = package.path..';'..
-                scripts_base_dir..'/?.lua'..';';
-end;
+
 require('libs.db');
 require('libs.commons');
 require('conference.conferenceService');
@@ -24,16 +19,21 @@ sql = string.format('delete from t_registration_ext');
 executeUpdate(sql);
 print(">>>> delete from t_registration_ext");
 
-local clock_rate = 100;
+local clock_rate = 97;
+local last_clock = os.time();
 local userClock = 0;
 local conferenceClock = 0;
 local conferenceEnergyClock = 0;
-while true do
-    freeswitch.msleep(clock_rate);
+while nil == dbh or (nil ~= dbh and dbh:connected()) do
+    local cur_clock = os.time();
+    if (cur_clock - last_clock < clock_rate) then
+      freeswitch.msleep(clock_rate - (cur_clock - last_clock));
+    end;
 
-    userClock = userClock + clock_rate;
-    conferenceClock = conferenceClock + clock_rate;
-    conferenceEnergyClock = conferenceEnergyClock + clock_rate;
+    userClock             = userClock             + (cur_clock - last_clock);
+    conferenceClock       = conferenceClock       + (cur_clock - last_clock);
+    conferenceEnergyClock = conferenceEnergyClock + (cur_clock - last_clock);
+    last_clock = cur_clock;
 
     if userClock > (60 * 1000) then
         userClock = 0;
@@ -49,5 +49,8 @@ while true do
         conferenceEnergyClock = 0;
         freeswitch.API():execute('luarun', "conference/task_member_energy.lua");
     end;
+
+    -- the last is synch
+    freeswitch.API():execute('lua', "task/task_async_executor.lua");
 end;
 

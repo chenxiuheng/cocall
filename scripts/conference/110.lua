@@ -5,6 +5,7 @@ FreeSWITCH_IPv4 = message:getHeader('FreeSWITCH-IPv4');
 require('libs.db');
 require('libs.commons');
 require('conference.conferenceService');
+require('conference.api_send_conference');
 
 -- ============================ accept ACTION(s) ================================ --
 
@@ -75,18 +76,9 @@ if nil ~= i then
 
     --- 2, get my conferences
     elseif 'list_conferences' == action then
-        local conferences = getMyConferences(from_user);
-        local msg = nil;
-
-        for i, conference in ipairs(conferences) do
-            if nil ~= msg then
-                msg = msg ..'\n'..formatConferenceFull(conference);
-            else 
-                msg = formatConferenceFull(conference);
-            end;
-        end;
-
-        sendSMS(to_user, from_user, 'conference-list', msg);
+        local id = string.format('%s/%s', from_user, 'list_conferences');
+        local cmd = string.format("conference/api_send_conferences.lua %s %s", to_user, from_user);
+        setTimeout(id, cmd, 500); -- 500ms later to send, avoid send msg frequently
     else 
         sendSMS(to_user, from_user, 'error', "I don't know what you said");
     end;
