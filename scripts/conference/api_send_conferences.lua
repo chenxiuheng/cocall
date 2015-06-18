@@ -10,21 +10,17 @@ require('conference.conferenceService');
 local sender = argv[1];
 local to_user = argv[2];
 
+local logger = getLogger('task_send_conferences');
 if nil ~= sender and nil ~= to_user then
-    local msg = nil;
+    local msg = 'conference-list';
     local conferences = getMyConferences(to_user);
 
     for i, conference in ipairs(conferences) do
-        if nil ~= msg then
-            msg = msg ..'\n'..formatConferenceFull(conference);
-        else 
-            msg = formatConferenceFull(conference);
-        end;
+         msg = msg ..'\n'..formatConferenceFull(conference);
     end;
 
-    if nil ~= msg then
-        sendSMS(sender, to_user, 'conference-list', msg);
-    end;
+    sendSMS(sender, to_user, msg);
+
 else
-    getLogger('task_send_conferences').error(string.format('illegal arguments (%s, %s)', argv[1], argv[2]));
+    logger.error(string.format('illegal arguments (%s, %s)', argv[1], argv[2]));
 end;

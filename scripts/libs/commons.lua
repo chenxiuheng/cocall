@@ -241,12 +241,14 @@ function sendSMS(fromUrl, toUrl, arg0, arg1, arg2, arg3, arg4, arg5)
     sql = string.format("SELECT distinct user_id, realm, profile from t_registration_ext where user_id='%s'", to_user);
     executeQuery(sql, function(row)
         local event = freeswitch.Event("CUSTOM", "SMS::SEND_MESSAGE");
+        local from_full = string.format('sip:%s@%s:%s', from_user, row['realm'], sip_port);
+        local to = string.format('%s@%s', row['user_id'], row['realm']);
         event:addHeader("proto",      from_proto);
         event:addHeader("dest_proto", to_proto);
         event:addHeader("from",       from);
         event:addHeader("from_user",  from_user);
-        event:addHeader("from_full",  string.format('sip:%s@%s:%s', from_user, row['realm'], sip_port)); 
-        event:addHeader("to",         string.format('%s@%s', row['user_id'], row['realm']));
+        event:addHeader("from_full",  from_full); 
+        event:addHeader("to",         to);
         event:addHeader("to_user",    row['user_id']);
         event:addHeader("type", "text/plain");
         event:addHeader("replying", "false");
@@ -257,9 +259,8 @@ function sendSMS(fromUrl, toUrl, arg0, arg1, arg2, arg3, arg4, arg5)
         event:chat_execute("send");
         hasSentIt = true;
 
-        local logger = getLogger('com.thunisoft.cocall.sms');
-        logger.debug('sendTo', row['user_id'], '@', row['realm']);
-        logger.debug(msg);
+        local logger = getLogger('sms');
+        logger.debug(from_full, '-->', to, '\n', msg);
     end);
 
     return hasSentIt;
