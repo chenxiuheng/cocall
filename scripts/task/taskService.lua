@@ -1,11 +1,11 @@
 
-function setTimeout(cmd, millisec, id)
+function setTimeout(id, cmd, millisec)
     local sql;
     if nil == id then id = 'auto_'..cmd; end;
 
     -- delete task with same id
     sql = sqlstring.format(
-            "delete from t_task where id='%'",
+            "delete from t_task where id='%s'",
             id
         );
     executeUpdate(sql);
@@ -25,7 +25,7 @@ end;
 function clearTimeout(id)
     local sql;
     sql = sqlstring.format(
-            "update t_task set n_executed = 1 where id='%'",
+            "update t_task set n_executed = 1 where id='%s'",
             id
         );
     executeUpdate(sql);
@@ -34,7 +34,7 @@ end;
 function getUnexecutedTask()
     local sql;
     sql = sqlstring.format(
-            "select id, c_lua_cmd as cmd from t_task where n_executed = 2 and d_execute >= now() "
+            "select id, c_lua_cmd as cmd from t_task where n_executed = 2 and d_execute <= now() "
         );
 
     local key;
@@ -43,6 +43,7 @@ function getUnexecutedTask()
     executeQuery(sql, function(row)
         key = row['id'];
         cmd = row['cmd'];
+
         tasks[key] = row['cmd'];
     end);
 

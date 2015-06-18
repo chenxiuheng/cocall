@@ -5,7 +5,7 @@ FreeSWITCH_IPv4 = message:getHeader('FreeSWITCH-IPv4');
 require('libs.db');
 require('libs.commons');
 require('conference.conferenceService');
-require('conference.api_send_conference');
+require('task.taskService');
 
 -- ============================ accept ACTION(s) ================================ --
 
