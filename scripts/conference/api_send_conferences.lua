@@ -19,9 +19,7 @@ if nil ~= sender and nil ~= to_user then
          msg = msg ..'\n'..formatConferenceFull(conference);
     end;
 
-
     sendSMS(sender, to_user, msg);
-
 else
     logger.error(string.format('illegal arguments (%s, %s)', argv[1], argv[2]));
 end;
