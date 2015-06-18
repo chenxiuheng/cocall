@@ -69,3 +69,19 @@ function executeUpdate(sql)
 
 end
 
+function now()
+    local dbh = freeswitch.Dbh(dsn); 
+
+    local now = nil;
+    if dbh:connected() then
+        local sql = "select extract(epoch from now()) * 1000 as t";
+
+        dbh:query(sql, function(row)
+            now = tonumber(row['t']);
+        end);
+    end
+
+    dbh:release();
+    return now;
+end;
+

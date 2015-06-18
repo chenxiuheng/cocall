@@ -19,6 +19,7 @@ if nil ~= sender and nil ~= to_user then
          msg = msg ..'\n'..formatConferenceFull(conference);
     end;
 
+
     sendSMS(sender, to_user, msg);
 
 else
