@@ -726,7 +726,9 @@ function newConferenceService(confPhone)
 
 
     service.notifyAll = function () 
-        setConferenceUpdated(confPhone);
+        local id = string.format("conference/%s/member-list", confPhone);
+        local cmd = string.format("conference/api_dispatch_member_list.lua %s", confPhone);
+        setTimeoutIfAbsent(id, cmd, 1024);
     end;
 
     service.toSimpleString = function() 
