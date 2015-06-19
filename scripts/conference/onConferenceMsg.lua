@@ -126,12 +126,12 @@ if nil ~= confPhone and nil ~=  from_user then
 
             if sayTo == 'sayTo' then
                 sentIt = true;
-                service.sayTo(dstUsers, from_user, txt);
+                service.sayTo(dstUsers, nil, txt);
             end;
         end;
 
         if not sentIt then
-            service.sayTo('all', from_user, txt);
+            service.sayTo('all', nil, txt);
         end;
 
     end;

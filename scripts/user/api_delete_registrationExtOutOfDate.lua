@@ -7,5 +7,3 @@ require('user.userService');
 
 deleteRegistrationExtOutOfDate();
 
-
-freeswitch.consoleLog('debug', 'delete registration ext out Of date \n');

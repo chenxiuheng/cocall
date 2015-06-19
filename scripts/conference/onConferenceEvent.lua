@@ -5,6 +5,7 @@
 local api = freeswitch.API();
 require('libs.commons');
 require('libs.db');
+require('task.taskService');
 require('conference.conferenceService');
 
 
@@ -119,16 +120,24 @@ if not isTemplateConference then
         if ('0' == level or 0 == leven) then
            level = '300'; -- default is 300 in freeswitch
         end;
-
         updateConferenceMemberEnergy(confPhone, user, energy, level);
+
+        -- // dispatch member energy after 500ms
+        local task_id = string.format("conference/%s/energy", confPhone);
+        local cmd = "conference/api_dispatch_member_energy.lua "..confPhone;
+        setTimeoutIfAbsent(task_id, cmd, 500);
     elseif action == 'stop-talking' then
         local energy = '0';
         local level = event:getHeader('Energy-Level');
         if ('0' == level or 0 == leven) then
            level = '300'; -- default is 300 in freeswitch
         end;
-    
         updateConferenceMemberEnergy(confPhone, user, energy, level);
+
+        -- // dispatch member energy after 500ms
+        local task_id = string.format("conference/%s/energy", confPhone);
+        local cmd = "conference/api_dispatch_member_energy.lua "..confPhone;
+        setTimeoutIfAbsent(task_id, cmd, 500);
     end;
 else
     local action = event:getHeader('Action');

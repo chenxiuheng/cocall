@@ -71,24 +71,6 @@ function getConferenceMembers(confPhone, user, except)
     return members;
 end;
 
-function setConferenceUpdated(confPhone)
-    local sql;
-    sql = sqlstring.format(
-            "update t_conference set n_updated = 1 where c_phone_no='%s'",
-            confPhone
-        );
-    
-    executeUpdate(sql);
-end;
-function clearConferenceUpdated(confPhone)
-    local sql;
-    sql = sqlstring.format(
-            "update t_conference set n_updated = 2 where c_phone_no='%s'",
-            confPhone
-        );
-    
-    executeUpdate(sql);
-end;
 
 function updateConferenceMemberFields(confPhone, user, field, value)
     local sql = "update t_conference_member ";
@@ -222,33 +204,6 @@ function setConferenceMemberOut(confPhone, user, memberId)
 
 end;
 
-
-function getRunningConferenceIds()
-    local sql;
-    sql = sqlstring.format(
-            "select c_phone_no from t_conference where n_is_running = 1"
-        );
-
-    local ids = {};    
-    executeQuery(sql, function(row)
-        table.insert(ids, row['c_phone_no']);
-    end);
-
-    return ids;
-end;
-function getUpdatedConferenceIds()
-    local sql;
-    sql = sqlstring.format(
-            "select c_phone_no from t_conference where n_updated  = 1 and  n_is_running = 1"
-        );
-
-    local ids = {};    
-    executeQuery(sql, function(row)
-        table.insert(ids, row['c_phone_no']);
-    end);
-
-    return ids;
-end;
 
 -- created conference    
 function createConference (name, creator, creatorName)

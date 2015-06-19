@@ -4,11 +4,20 @@ require('libs.db');
 require('task.taskService');
 
 local logger = getLogger('task_async_executor');
-local tasks = getUnexecutedTask();
+local tasks = getExecuteTasks();
 
-for id, cmd in pairs(tasks) do
-    clearTimeout(id);
+for index, task in pairs(tasks) do
+    local id        = task['id'];
+    local cmd       = task['cmd'];
+    local timeout   = task['timeout'];
+    local task_type = task['type'];
+
+    if task_type =='timeout' then
+        clearTimeout(id);
+    else
+        recycleInterval(id, timeout); 
+    end;
+
     api:execute('lua', cmd);
 
-    logger.info('executed: ', cmd, ', id = ', id);
 end;
