@@ -210,7 +210,7 @@ function createConference (name, creator, creatorName)
     local phoneNo = nil;
 
     -- 1, get Next Conference Phone Number
-    executeQuery("select next_phone_no('conf') num", function(row) 
+    executeQuery("select next_id('conf') num", function(row) 
         phoneNo = row.num;
     end);
 
