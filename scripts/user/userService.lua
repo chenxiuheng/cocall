@@ -16,7 +16,7 @@ end;
 function deleteRegistrationExt(call_id)
     local sql;
     sql = sqlstring.format("delete from t_registration_ext where call_id='%s'", call_id);
-    executeUpdate(sql);
+    -- executeUpdate(sql);
 end;
 
 function deleteRegistrationExtOutOfDate()
