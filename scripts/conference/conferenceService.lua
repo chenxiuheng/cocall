@@ -25,49 +25,47 @@ end;
 function getConferenceMembers(confPhone, user, except)
     local sql;
 
-    sql = sqlstring.format(
-        " SELECT DISTINCT "..
-        " mem.c_phone_no  as user, "..
-        " mem.c_name      as name, "..
-        " mem.n_is_in as is_in, "..
-        " mem.c_member_type as type, "..
-        " mem.n_member_id as member_id, "..
-        " mem.n_can_speak as can_speak, "..
-        " (select count(*) from t_registration_ext as ext  where ext.user_id=mem.c_phone_no and expired > now()) as num_reg, "..
-        " mem.n_is_modirator as is_moderator "..
-        " FROM "..
-        " t_conference_member AS mem "..
-        " where mem.c_conference_phone_no = '%s' ",
-        confPhone
-    );
+    local buf = newSqlBuilder();
+   
+    buf.append(" SELECT DISTINCT ");
+    buf.append(" mem.c_phone_no  as user, ");
+    buf.append(" mem.c_name      as name, ");
+    buf.append(" mem.n_is_in as is_in, ");
+    buf.append(" mem.c_member_type as type, ");
+    buf.append(" mem.n_member_id as member_id, ");
+    buf.append(" mem.n_can_speak as can_speak, ");
+    buf.append(" (select count(*) from t_registration_ext as ext  where ext.user_id=mem.c_phone_no and expired > now()) as num_reg, ");
+    buf.append(" mem.n_is_modirator as is_moderator ");
+    buf.append(" FROM ");
+    buf.append(" t_conference_member AS mem ");
+    buf.format(" where mem.c_conference_phone_no = '%s' ", confPhone);
+
 
     if 'non_moderator' == user then 
-        sql = sql .. "  and n_is_modirator <> 1";
+        buf.append("  and n_is_modirator <> 1");
     elseif 'moderator' == user then
-        sql = sql .. "  and n_is_modirator = 1";
+        buf.append("  and n_is_modirator = 1");
     elseif 'all' ~= user and nil ~= user then
-        sql = sql .. sqlstring.format(" AND mem.c_phone_no='%s'", user);
+        buf.format(" AND mem.c_phone_no='%s'", user);
     end;
 
     if 'non_moderator' == except then 
-        sql = sql .. "  and n_is_modirator = 1";
+        buf.append(" and n_is_modirator = 1");
     elseif 'moderator' == except then
-        sql = sql .. "  and n_is_modirator <> 1";
+        buf.append(" and n_is_modirator <> 1");
     elseif nil ~= except then
-        sql = sql .. sqlstring.format(" AND mem.c_phone_no<>'%s'", except);
+        buf.format(" AND mem.c_phone_no<>'%s'", except);
     end;
 
-    local memberIndex = 1;    
     local members = {};
-    executeQuery(sql, function(row)
+    executeQuery(buf.toString(), function(row)
         if row['num_reg'] == '0' then
             row['is_online'] = '2';
         else
             row['is_online'] = '1';
         end;
 
-        members[memberIndex] = row;
-        memberIndex = memberIndex + 1;
+        table.insert(members, row);
     end);
 
     return members;
@@ -75,47 +73,41 @@ end;
 
 
 function updateConferenceMemberFields(confPhone, user, field, value)
-    local sql = "update t_conference_member ";
+    local buf = newSqlBuilder("update t_conference_member ");
 
     local isVarchar = nil ~= string.match(field, "^[cC].*$");
     if isVarchar then
-        sql = sql .. " set " .. field .. sqlstring.format("='%s'", value);
+        buf.append(" set ").append(field).format("='%s'", value);
     else    
-        sql = sql .. " set " .. field .. sqlstring.format("=%s", value);
+        buf.append(" set ").append(field).format("=%s", value);
     end;
 
-    sql = sql .. sqlstring.format(" where c_conference_phone_no = '%s' ", confPhone);
+    buf.format(" where c_conference_phone_no = '%s' ", confPhone);
 
     if 'non_moderator' == user then
-        sql = sql .. "  and n_is_modirator <> 1 ";
+        buf.append("  and n_is_modirator <> 1 ");
     elseif nil ~= user then
-        sql = sql .. sqlstring.format("  and c_phone_no = '%s' ", user);
+        buf.format("  and c_phone_no = '%s' ", user);
     end;
 
-    executeUpdate(sql);
+    return buf.update();
 end;
 
 local CONFERENCE_MEMBER_ENERGY_EXPIRSED = 1000;
 
 function getConferenceMemberEnergies (confPhone)
-    local sql;
-    sql = sqlstring.format(
-            "select c_phone_no as user, "..
-            "       n_cur_engery as cur_energy, "..
-            "       n_engery_level as energy_level"..
-            " from t_conference_member"..
-            "  where c_conference_phone_no = '%s'  and now() - d_speak < interval '%s millisecond'"..
-            " and n_engery_level is not null"..
-            " and n_cur_engery > 0 ",
-            confPhone, CONFERENCE_MEMBER_ENERGY_EXPIRSED
-        );
+    local buf = newSqlBuilder();
 
-    local rows = {};
-    executeQuery(sql, function(row)
-        table.insert(rows, row);
-    end);
+    buf.append("select c_phone_no as user, ");
+    buf.append("    n_cur_engery as cur_energy, ");
+    buf.append("    n_engery_level as energy_level");
+    buf.append(" from t_conference_member");
+    buf.append("  where c_conference_phone_no = '%s' ", confPhone);
+    buf.append("  and now() - d_speak < interval '%s millisecond'", CONFERENCE_MEMBER_ENERGY_EXPIRSED);
+    buf.append(" and n_engery_level is not null");
+    buf.append(" and n_cur_engery > 0 ");
 
-    return rows;
+    return buf.list();
 end;
 
 function updateConferenceMemberEnergy(confPhone, user, energy, energy_level)
@@ -242,29 +234,23 @@ function setConferenceIsRunning(confPhone, n_is_running)
 end;
 
 function getConferenceInfo(confPhone)
-    local sql = sqlstring.format(
-        ' SELECT '..
-        ' conf.c_phone_no as conference, '..
-        ' conf.c_name as name, '..
-        ' conf.c_modirator_phone_no as moderator, '..
-        ' conf.c_creator as creator, '..
-        ' conf.c_creator_name as creator_name, '..
-        ' conf.n_valid as valid, '..
-        ' (extract(epoch from now()) - extract(epoch from d_created)) as age,'..
-        ' conf.c_profile '..
-        ' FROM '..
-        '    t_conference AS conf '..
-        " where  conf.c_phone_no='%s' ",
-        confPhone
-    );
+    local buf = newSqlBuilder();
+
+    buf.append(" SELECT ");
+    buf.append(" conf.c_phone_no as conference,  ");
+    buf.append(" conf.c_name as name,  ");
+    buf.append(" conf.c_modirator_phone_no as moderator,  ");
+    buf.append(" conf.c_creator as creator,  ");
+    buf.append(" conf.c_creator_name as creator_name,  ");
+    buf.append(" conf.n_valid as valid,  ");
+    buf.append(" (extract(epoch from now()) - extract(epoch from d_created)) as age, ");
+    buf.append(" conf.c_profile  ");
+    buf.append(" FROM  ");
+    buf.append("    t_conference AS conf  ");
+    buf.append(" where  conf.c_phone_no='%s' ", confPhone);
 
     -- get row    
-    local info;
-    executeQuery(sql, function(row)
-        info = row;
-    end);
-
-    return info;
+    return buf.list()[1];
 end;
 
 -- get conferences of User
@@ -272,38 +258,29 @@ function getMyConferences (memberPhone, runningOnly)
     local extraSql = "";
     if nil ~= runningOnly and runningOnly then extraSql = " and n_is_running = 1 " ;end;
 
-    local sql = sqlstring.format(
-            ' SELECT '..
-            ' conf.c_phone_no as conference, '..
-            ' conf.c_name as name, '..
-            ' conf.c_modirator_phone_no as moderator, '..
-            ' conf.c_creator as creator, '..
-            ' conf.c_creator_name as creator_name, '..
-            ' conf.c_profile, '..
-            ' conf.n_valid as valid, '..
-            '  (extract(epoch from now()) - extract(epoch from d_created)) as age,'..
-            ' (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no) as num_member, '..
-            ' (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no and n_is_in = 1) as num_is_in '..
-            ' FROM '..
-            '    t_conference AS conf '..
-            ' where  n_valid=1 '..
-            ' %s ' ..
-            ' and conf.c_phone_no in ( '..
-            "     SELECT c_conference_phone_no from t_conference_member where c_phone_no = '%s' "..
-            ") " ..
-            " order by d_created desc ",
-            extraSql, memberPhone
-        );
-
-    local confIndex = 1;
-    local confs = {};
-    executeQuery(sql, function(row)
-        confs[confIndex] = row;
-        
-        confIndex = confIndex + 1;
-    end);
+    local buf = newSqlBuilder();
     
-    return confs;
+    buf.append(" SELECT ");
+    buf.append(" conf.c_phone_no as conference, ");
+    buf.append(" conf.c_name as name, ");
+    buf.append(" conf.c_modirator_phone_no as moderator, ");
+    buf.append(" conf.c_creator as creator, ");
+    buf.append(" conf.c_creator_name as creator_name, ");
+    buf.append(" conf.c_profile, ");
+    buf.append(" conf.n_valid as valid, ");
+    buf.append("  (extract(epoch from now()) - extract(epoch from d_created)) as age,");
+    buf.append(" (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no) as num_member, ");
+    buf.append(" (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no and n_is_in = 1) as num_is_in ");
+    buf.append(" FROM ");
+    buf.append("    t_conference AS conf ");
+    buf.append(" where  n_valid=1 ");
+    buf.append(extraSql);
+    buf.append(" and conf.c_phone_no in ( ");
+    buf.append("     SELECT c_conference_phone_no from t_conference_member where c_phone_no = '%s' ", memberPhone);
+    buf.append(") ");
+    buf.append(" order by d_created desc ");
+
+    return buf.list();
 end;
 -----// END   Conference DAO ---------------------------------------------
 

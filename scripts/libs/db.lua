@@ -35,6 +35,69 @@ function sqlstring.format (format, ...)
     return sql;
 end;
 
+function sqlformat(format, arg)
+    if nil == arg then arg = '' ;
+    else
+        arg = string.gsub(arg, "'", "''"); -- replace "'" to "''" for postgres
+        arg = string.gsub(arg, ";", " ");  -- special char used for send sms api 
+        arg = string.gsub(arg, "\r", " "); -- 
+        arg = string.gsub(arg, "\n", "  ");
+    end;
+
+    return string.format(format, arg);
+end;
+
+function newSqlBuilder(initString)
+    local chars = {};
+    local self = {};
+
+    self.append = function (arg, param)
+
+        if nil == param then
+            if nil == arg then arg = '' end;
+            table.insert(chars, arg);
+        else
+            self.format(arg, param);
+        end;
+
+        return self;
+    end;
+
+    self.format = function (format, param)
+        table.insert(chars, sqlformat(format, param));
+
+        return self;
+    end;
+
+    self.toString = function()
+        return table.concat(chars);
+    end;
+
+    self.query = function(callback)
+        return executeQuery(self.toString(), callback);
+    end;
+
+    self.list = function()
+        local rows = {};
+
+        executeQuery(self.toString(), function(row)
+            table.insert(rows, row);
+        end);
+
+        return rows;
+    end;
+
+    self.update = function()
+        return executeUpdate(self.toString());
+    end;
+
+    if nil ~= initString then
+        self.append(initString);
+    end;
+
+    return self;
+end;
+
 -- use sql query
 function executeQuery(sql, callback)
     if nil == dbh then dbh = freeswitch.Dbh(dsn); end;
@@ -72,7 +135,7 @@ function executeUpdate(sql)
 end
 
 function now()
-    local dbh = freeswitch.Dbh(dsn); 
+    if nil == dbh then dbh = freeswitch.Dbh(dsn); end;
 
     local now = nil;
     if dbh:connected() then
@@ -83,7 +146,6 @@ function now()
         end);
     end
 
-    dbh:release();
     return now;
 end;
 
