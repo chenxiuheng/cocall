@@ -680,7 +680,7 @@ function newConferenceService(confPhone)
             if isTrue(is_moderator) then flags = flags + 1;end;
           
             buf.append('\n');
-            buf.append(user).append(';').append(name).append(';').append(oct_to_hex[flags]);
+            buf.append(user).append(';').append(name).append(';').append(oct_to_hex[flags]).append(';');
         end;
 
         return buf.toString();
