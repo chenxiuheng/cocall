@@ -63,8 +63,10 @@ function executeUpdate(sql)
     if dbh:connected() then
         freeswitch.consoleLog("notice", sql .. "\n") ;
         dbh:query(sql);
+        return dbh:affected_rows();
     else
         freeswitch.consoleLog("warning", "cannot connect to database by " .. dsn .. "\n")
+        return 0;
     end
 
 end

@@ -1,4 +1,20 @@
 
+--字符串分割函数
+--传入字符串和分隔符，返回分割后的table
+function string.split(str, delimiter)
+    local result = {}
+
+	if str==nil or str=='' or delimiter==nil then
+		return result;
+	end
+	
+    for match in (str..delimiter):gmatch("(.-)"..delimiter) do
+        table.insert(result, match)
+    end
+    return result
+end
+
+
 function isTrue(value) 
     if (nil == value or '' == value) then return false; end;
     if (2 == value or '2' == value) then  return false; end;
@@ -19,20 +35,6 @@ function boolean (value)
     return false;
 end;
 
-
-
-function debug(k, v) 
-    if not v then v = '[NIL]' end;
-    freeswitch.consoleLog("DEBUG", k..'='..v..'\n');
-end;
-function log(k, v)
-   if not v then v = '[NIL]' end;
-   freeswitch.consoleLog("NOTICE", k..'='..v..'\n');
-end;
-function error(k, v)
-   if not v then v = '[NIL]' end;
-   freeswitch.consoleLog("WARNING", k..'='..v..'\n');
-end;
 
 function getLogger(prefix)
     local log = {};

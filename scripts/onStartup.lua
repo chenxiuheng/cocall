@@ -13,7 +13,7 @@ executeUpdate(sql);
 
 sql = string.format('delete from t_registration_ext');
 executeUpdate(sql);
-setInterval('test', 'user/api_delete_registrationExtOutOfDate.lua', 30000)
+setInterval('test', 'api_clear_registrationExt', 3000)
 
 local last_clock = now();
 local clock_rate = 97;

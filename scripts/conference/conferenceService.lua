@@ -103,7 +103,8 @@ function getConferenceMemberEnergies (confPhone)
             "       n_engery_level as energy_level"..
             " from t_conference_member"..
             "  where c_conference_phone_no = '%s'  and now() - d_speak < interval '%s millisecond'"..
-            " and n_engery_level is not null",
+            " and n_engery_level is not null"..
+            " and n_cur_engery > 0 ",
             confPhone, CONFERENCE_MEMBER_ENERGY_EXPIRSED
         );
 
@@ -727,8 +728,8 @@ function newConferenceService(confPhone)
 
     service.notifyAll = function () 
         local id = string.format("conference/%s/member-list", confPhone);
-        local cmd = string.format("conference/api_dispatch_member_list.lua %s", confPhone);
-        setTimeoutIfAbsent(id, cmd, 1024);
+        local cmd = string.format("api_dispatch_member_list %s", confPhone);
+        setTimeoutIfAbsent(id, cmd, 700);
     end;
 
     service.toSimpleString = function() 

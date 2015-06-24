@@ -2,8 +2,8 @@ local api = freeswitch.API();
 
 require('libs.db');
 require('libs.commons');
-require('conference.conferenceService');
 require('task.taskService');
+require('conference.conferenceService');
 
 local from_user = message:getHeader('from_user');
 local confPhone = message:getHeader('to_user');

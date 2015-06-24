@@ -124,7 +124,7 @@ if not isTemplateConference then
 
         -- // dispatch member energy after 500ms
         local task_id = string.format("conference/%s/energy", confPhone);
-        local cmd = "conference/api_dispatch_member_energy.lua "..confPhone;
+        local cmd = "api_dispatch_member_energy "..confPhone;
         setTimeoutIfAbsent(task_id, cmd, 500);
     elseif action == 'stop-talking' then
         local energy = '0';
@@ -136,7 +136,7 @@ if not isTemplateConference then
 
         -- // dispatch member energy after 500ms
         local task_id = string.format("conference/%s/energy", confPhone);
-        local cmd = "conference/api_dispatch_member_energy.lua "..confPhone;
+        local cmd = "api_dispatch_member_energy "..confPhone;
         setTimeoutIfAbsent(task_id, cmd, 500);
     end;
 else

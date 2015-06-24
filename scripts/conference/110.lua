@@ -77,7 +77,7 @@ if nil ~= i then
     --- 2, get my conferences
     elseif 'list_conferences' == action then
         local id = string.format('%s/%s', from_user, 'list_conferences');
-        local cmd = string.format("conference/api_send_conferences.lua %s %s", to_user, from_user);
+        local cmd = string.format("api_send_conferences %s %s", to_user, from_user);
         setTimeout(id, cmd, 500); -- 500ms later to send, avoid send msg frequently
     else 
         sendSMS(to_user, from_user, 'error', "I don't know what you said");
