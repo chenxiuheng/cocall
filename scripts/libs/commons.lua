@@ -8,7 +8,7 @@ function string.split(str, delimiter)
 		return result;
 	end
 	
-    for match in (str..delimiter):gmatch("(.-)"..delimiter) do
+    for match in (str):gmatch("(.-)"..delimiter) do
         table.insert(result, match)
     end
     return result
@@ -150,7 +150,7 @@ function batchSendSMS(from_user, toUsers, ...)
         hasSentIt = true;
 
         local logger = getLogger('sms');
-        logger.debug(from_full, '-->', to, '\n', msg);
+        logger.info(from_full, '-->', to, '\n', msg);
 
     end);
 
@@ -262,8 +262,32 @@ function sendSMS(fromUrl, toUrl, arg0, arg1, arg2, arg3, arg4, arg5)
         hasSentIt = true;
 
         local logger = getLogger('sms');
-        logger.debug(from_full, '-->', to, '\n', msg);
+        logger.info(from_full, '-->', to, '\n', msg);
     end);
 
     return hasSentIt;
+end;
+
+function newStringBuilder(initString)
+    local chars = {};
+    local self = {};
+
+    self.append = function (arg)
+        if nil == arg then arg = '' end;
+
+        table.insert(chars, arg);
+
+        return self;
+    end;
+
+    self.toString = function()
+        return table.concat(chars);
+    end;
+
+
+    if nil ~= initString then
+        self.append(initString);
+    end;
+
+    return self;
 end;

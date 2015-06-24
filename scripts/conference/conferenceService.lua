@@ -1,3 +1,5 @@
+require('task.taskService');
+
 function isTrue(value) 
     if (nil == value or '' == value) then return false; end;
     if (2 == value or '2' == value) then  return false; end;
@@ -637,17 +639,22 @@ function newConferenceService(confPhone)
     end;
 
     service.dispatchMemberEnergies = function ()
-        local energy_msg = 'conference-energy';
+        local noEnergyInfo = true;
+
+        local buf = newStringBuilder('conference-energy');
         local energies = getConferenceMemberEnergies(confPhone);
         for i, energy in ipairs(energies) do
-            energy_msg = energy_msg..string.format("\n%s;%s/%s", energy['user'], energy['cur_energy'], energy['energy_level']);
+            noEnergyInfo = false;
+
+            buf.append('\n');
+            buf.append(energy['user']).append(';').append(energy['cur_energy']).append('/').append(energy['energy_level']);
         end;
 
-        if 'conference-energy' == energy_msg then
+        if noEnergyInfo then
             logger.debug('No member energies to dispatch');
         else
             local members = getConferenceMembers(confPhone);
-            dispatchSMS(members, energy_msg);
+            dispatchSMS(members, buf.toString());
         end;
     end;
 
@@ -672,7 +679,7 @@ function newConferenceService(confPhone)
         oct_to_hex[14] = 'E';
         oct_to_hex[15] = 'F';
 
-        local msg = 'conference-members';
+        local buf = newStringBuilder('conference-members');
         for i, member in ipairs(members) do
             local user = member['user'];
             local name = member['name'];
@@ -695,10 +702,11 @@ function newConferenceService(confPhone)
             -- is_moderator
             if isTrue(is_moderator) then flags = flags + 1;end;
           
-            msg = msg .. sqlstring.format('\n%s;%s;%s;', user, name, oct_to_hex[flags]);
+            buf.append('\n');
+            buf.append(user).append(';').append(name).append(';').append(oct_to_hex[flags]);
         end;
 
-        return msg;
+        return buf.toString();
     end;
 
     service.getMemberStates = function (dstUser)
@@ -766,9 +774,4 @@ function formatConference(info)
 
 end;
 
-function formatConferenceFull(info)
-    if nil == info then return ''; end;
-    return string.format('%s;%s;%s;%s;%s;%s/%s;', 
-            info['conference'], info['name'], info['creator'], info['creator_name'], info['age'], info['num_is_in'], info['num_member']
-        );
-end;
+

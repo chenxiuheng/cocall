@@ -4,7 +4,7 @@ function setTimeout(id, cmd, millisec)
     if nil == id then id = 'auto_'..cmd; end;
 
     -- split cmd, read api name and params
-    local segs = string.split(cmd, '(%s+)');
+    local segs = string.split(cmd.." ", '(%s+)');
     local api = segs[1];
     local args_1 = segs[2];
     local args_2 = segs[3];
@@ -40,7 +40,7 @@ function setTimeout(id, cmd, millisec)
                 "  c_args_1='%s',"..
                 "  c_args_2='%s',"..
                 "  c_args_3='%s',"..
-                "  c_args_4='%s',"..
+                "  c_args_4='%s'"..
                 " where id = '%s' ",
                 millisec, api, args_1, args_2, args_3, args_4, id
             );
@@ -55,7 +55,7 @@ function setTimeoutIfAbsent(id, cmd, millisec)
     if nil == id then id = 'auto_'..cmd; end;
 
     -- split cmd, read api name and params
-    local segs = string.split(cmd, '(%s+)');
+    local segs = string.split(cmd.." ", '(%s+)');
     local api = segs[1];
     local args_1 = segs[2];
     local args_2 = segs[3];
@@ -91,12 +91,13 @@ function setTimeoutIfAbsent(id, cmd, millisec)
                 "  c_args_1='%s',"..
                 "  c_args_2='%s',"..
                 "  c_args_3='%s',"..
-                "  c_args_4='%s',"..
+                "  c_args_4='%s'"..
                 " where id = '%s' ",
                 millisec, api, args_1, args_2, args_3, args_4, id
             );
         executeUpdate(sql);
     else
+        local logger = getLogger('task_service');
         logger.notice('timeout[', id, "] existed and has't been executed, don't change DB state");
     end;
 
