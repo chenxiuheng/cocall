@@ -275,8 +275,10 @@ function getMyConferences (memberPhone, runningOnly)
     buf.append("    t_conference AS conf ");
     buf.append(" where  n_valid=1 ");
     buf.append(extraSql);
-    buf.append(" and conf.c_phone_no in ( ");
-    buf.append("     SELECT c_conference_phone_no from t_conference_member where c_phone_no = '%s' ", memberPhone);
+    buf.append(" and EXISTS ( ");
+    buf.append("     SELECT c_conference_phone_no from t_conference_member  ");
+    buf.append("     where c_conference_phone_no = conf.c_phone_no");
+    buf.append("       and c_phone_no = '%s' ", memberPhone);
     buf.append(") ");
     buf.append(" order by d_created desc ");
 
@@ -626,6 +628,7 @@ function newConferenceService(confPhone)
             buf.append('\n');
             buf.append(energy['user']).append(';').append(energy['cur_energy']).append('/').append(energy['energy_level']);
         end;
+        buf.append('\n');
 
         if noEnergyInfo then
             logger.debug('No member energies to dispatch');
@@ -682,6 +685,7 @@ function newConferenceService(confPhone)
             buf.append('\n');
             buf.append(user).append(';').append(name).append(';').append(oct_to_hex[flags]).append(';');
         end;
+        buf.append('\n');
 
         return buf.toString();
     end;
@@ -699,10 +703,10 @@ function newConferenceService(confPhone)
     end;
 
     service.dispatchMemberStates = function ()
+
         -- 1, get member's states
         local members;
         members = getConferenceMembers(confPhone);
-        
         
         -- 2, build msg
         local msg = formatAsSMS(members);
