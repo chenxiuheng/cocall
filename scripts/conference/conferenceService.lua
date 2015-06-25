@@ -188,17 +188,11 @@ function setConferenceMemberIn (confPhone, user, memberId)
 end;
 
 function setConferenceMemberOut(confPhone, user, memberId)
-    local sql;
-
-    -- 1, update DB state, the member must be last used.
-    --     if the member id in DB is not eq memberId arg, do nothing
-    sql = sqlstring.format(
-        " update t_conference_member set n_is_in=2, n_has_video=2 "..   
-        " where c_conference_phone_no='%s' and c_phone_no='%s'  and n_member_id=%s",
-        confPhone, user, memberId
-    );
-    executeUpdate(sql);
-
+    newSqlBuilder(" update t_conference_member set n_is_in=2, n_has_video=2 ")
+          .append(" where c_conference_phone_no='%s'", confPhone)
+          .append(" and c_phone_no='%s'", user)
+          .append(" and n_member_id=%s", memberId)
+          .update();
 end;
 
 
@@ -206,23 +200,24 @@ end;
 function createConference (name, creator, creatorName)
     local phoneNo = nil;
 
-    -- 1, get Next Conference Phone Number
     executeQuery("select next_id('conf') num", function(row) 
         phoneNo = row.num;
     end);
 
-    assert(phoneNo, "T_Phone have NOT config for 'conf'");
 
-    -- 2, insert row data
-    local sql = sqlstring.format(
-            'insert into t_conference  '..
-            ' (c_phone_no, c_modirator_phone_no, c_name, c_creator, c_creator_name, d_created, d_updated, d_plan, n_valid, c_profile,  n_is_running)'..
-            "values ('%s', '%s', '%s', '%s', '%s', now(),  now(), now(), 1, 'default', 2)",
-            phoneNo, creator, name, creator, creatorName
-        );
-    executeUpdate(sql);
+    newSqlBuilder(" insert into t_conference  ")
+          .append(" (c_phone_no, c_modirator_phone_no, c_name, c_creator, c_creator_name," )
+          .append(" d_created, d_updated, d_plan, n_valid, c_profile,  n_is_running)")
+          .append(" values ")
+          .format(" ('%s'", phoneNo);
+          .format(" ,'%s'", creator);
+          .format(" ,'%s'", name);
+          .format(" ,'%s'", creator);
+          .format(" ,'%s'", creatorName);
+          .append(" ,now(),  now(), now(), 1, 'default', 2");
+          .append(" )")
+          .update();
 
-    -- 3, return conf phone no
     return phoneNo;
 end;
 
@@ -448,13 +443,10 @@ function newConferenceService(confPhone)
         end;
 
         -- delete from db
-        sql = sqlstring.format(
-                " delete from t_conference_member "..
-                " where c_conference_phone_no = '%s' "..
-                "   AND c_phone_no = '%s'",
-                 confPhone, user
-            );
-        executeUpdate(sql);
+        newSqlBuilder(" delete from t_conference_member ")
+              .format(" where c_conference_phone_no = '%s' ", confPhone);
+              .format(" AND c_phone_no = '%s'", user)
+              .update();
 
         releaseInfo();
     end;
