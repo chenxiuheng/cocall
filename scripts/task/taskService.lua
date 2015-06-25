@@ -34,19 +34,17 @@ function setTimeout(id, cmd, millisec)
             );
         executeUpdate(sql);
     else
-        sql = sqlstring.format(
-                "update t_task_timeout set d_created = now(), "..
-                "  n_executed = 2, "..
-                "  d_execute = now() + interval '%s millisecond',"..
-                "  c_api='%s',"..
-                "  c_args_1='%s',"..
-                "  c_args_2='%s',"..
-                "  c_args_3='%s',"..
-                "  c_args_4='%s'"..
-                " where id = '%s' ",
-                millisec, api, args_1, args_2, args_3, args_4, id
-            );
-        executeUpdate(sql);
+        local buf = newSqlBuilder();
+        buf.append("update t_task_timeout set d_created = now(), ");
+        buf.append("  n_executed = 2, ");
+        buf.append("  d_execute = now() + interval '%s millisecond',", millisec);
+        buf.format("  c_api='%s',", api);
+        buf.format("  c_args_1='%s',", args_1);
+        buf.format("  c_args_2='%s',", args_2);
+        buf.format("  c_args_3='%s',", args_3);
+        buf.format("  c_args_4='%s'", args_4);
+        buf.format(" where id = '%s' ", id);
+        buf.update();
     end;
 
     return id;
@@ -85,19 +83,17 @@ function setTimeoutIfAbsent(id, cmd, millisec)
             );
         executeUpdate(sql);
     elseif executed then
-        sql = sqlstring.format(
-                "update t_task_timeout set d_created = now(), "..
-                "  n_executed = 2, "..
-                "  d_execute = now() + interval '%s millisecond',"..
-                "  c_api='%s',"..
-                "  c_args_1='%s',"..
-                "  c_args_2='%s',"..
-                "  c_args_3='%s',"..
-                "  c_args_4='%s'"..
-                " where id = '%s' ",
-                millisec, api, args_1, args_2, args_3, args_4, id
-            );
-        executeUpdate(sql);
+        local buf = newSqlBuilder();
+        buf.append("update t_task_timeout set d_created = now(), ");
+        buf.append("  n_executed = 2, ");
+        buf.append("  d_execute = now() + interval '%s millisecond',", millisec);
+        buf.format("  c_api='%s',", api);
+        buf.format("  c_args_1='%s',", args_1);
+        buf.format("  c_args_2='%s',", args_2);
+        buf.format("  c_args_3='%s',", args_3);
+        buf.format("  c_args_4='%s'", args_4);
+        buf.format(" where id = '%s' ", id);
+        buf.update();
     else
         local logger = getLogger('task_service');
         logger.notice('timeout[', id, "] existed and has't been executed, don't change DB state");
@@ -113,21 +109,17 @@ function clearTimeout(id)
 end;
 
 function getExecuteTasks()
-    local sql;
-    sql = sqlstring.format(
-            " select id, c_api as cmd, -1 as timeout, 'timeout' as type, "..
-            " c_args_1, c_args_2, c_args_3, c_args_4 "..
-            " from t_task_timeout where n_executed = 2 and d_execute <= now() "..
-            "union all"..
-            " select id, c_api as cmd, n_timeout as timeout, 'interval' as type, "..
-            " c_args_1, c_args_2, c_args_3, c_args_4 "..
-            " from t_task_interval where d_execute <= now() "
-        );
+    local buf = newSqlBuilder();
+    buf.append(" select id, c_api as cmd, -1 as timeout, 'timeout' as type, ");
+    buf.append(" c_args_1, c_args_2, c_args_3, c_args_4 ");
+    buf.append(" from t_task_timeout where n_executed = 2 and d_execute <= now() ");
+    buf.append("union all");
+    buf.append(" select id, c_api as cmd, n_timeout as timeout, 'interval' as type, ");
+    buf.append(" c_args_1, c_args_2, c_args_3, c_args_4 ");
+    buf.append(" from t_task_interval where d_execute <= now() ");
 
-    local key;
-    local cmd;
     local tasks = {};
-    executeQuery(sql, function(row)
+    buf.query(function(row)
         row['timeout'] = tonumber(row['timeout']);
         row['args'] = {};
         table.insert(row['args'], row['c_args_1']);

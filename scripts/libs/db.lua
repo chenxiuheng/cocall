@@ -13,9 +13,8 @@ function sqlstring.format (format, ...)
     local args = {...};
 
     local index = 1;
-    local sql = '';
-    local param;
     local arg = nil;
+    local buf = newSqlBuilder();
     for match in string.gmatch(format..'%s', "(.-)%%s") do
         if nil ~= args[index] then
             arg = args[index];
@@ -24,15 +23,15 @@ function sqlstring.format (format, ...)
             arg = string.gsub(arg, "\r", " "); -- 
             arg = string.gsub(arg, "\n", "  ");
         
-            sql = sql .. match .. arg;
+            buf.append(match).append(arg);
         else
-            sql = sql .. match;
+            buf.append(match);
         end;
 
         index = index + 1;
     end
 
-    return sql;
+    return buf.toString();
 end;
 
 function sqlformat(format, arg)
