@@ -200,9 +200,14 @@ end;
 function createConference (name, creator, creatorName)
     local phoneNo = nil;
 
-    executeQuery("select next_id('conf') num", function(row) 
-        phoneNo = row.num;
+
+    executeQuery("BEGIN");
+    executeQuery("LOCK TABLE t_id IN ACCESS EXCLUSIVE MODE");
+    executeQuery(
+            "select next_id('conf') as id", function(row)
+        phoneNo = row['id']
     end);
+    executeQuery("COMMIT");
 
 
     newSqlBuilder(" insert into t_conference  ")
