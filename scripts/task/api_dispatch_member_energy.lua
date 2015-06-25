@@ -1,3 +1,4 @@
+require('conference.conferenceService');
 
 function api_dispatch_member_energy (confPhone)
     local service;

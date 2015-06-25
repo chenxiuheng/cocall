@@ -1,3 +1,5 @@
+require('conference.conferenceService');
+
 function api_dispatch_member_list (confPhone)
     local service;
     service = newConferenceService(confPhone);

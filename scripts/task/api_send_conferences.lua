@@ -1,3 +1,5 @@
+require('conference.conferenceService');
+
 function api_send_conferences (from_user, to_user)
     local conferences = getMyConferences(to_user);
 
