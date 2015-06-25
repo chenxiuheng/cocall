@@ -46,14 +46,11 @@ A.api_clear_registrationExt = function()
 end;
 
 A.api_clear_executed_timeout = function()
-    local cmd = newStringBuilder("task/api_clear_executed_timeout.lua");
-
-    execute(cmd.toString());
+    freeswitch.API():execute('lua', "task/api_clear_executed_timeout.lua"); -- must synch
 end;
-A.api_clear_invalid_conferences = function()
-    local cmd = newStringBuilder("task/api_clear_invalid_conferences.lua");
 
-    execute(cmd.toString());
+A.api_clear_invalid_conferences = function()
+    freeswitch.API():execute('lua', "task/api_clear_invalid_conferences.lua"); -- must synch
 end;
 -- // end
 

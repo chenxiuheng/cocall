@@ -4,10 +4,6 @@ require('user.userService');
 require('conference.conferenceService');
 
 
-
-freeswitch.consoleLog("INFO", event:serialize()..'\n');
-
-
 -- save registeration info
 local call_id = event:getHeader('call-id');
 local profile = event:getHeader('profile-name');
