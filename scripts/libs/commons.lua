@@ -1,3 +1,4 @@
+require('libs.db');
 
 --字符串分割函数
 --传入字符串和分隔符，返回分割后的table
@@ -40,49 +41,40 @@ function getLogger(prefix)
     local log = {};
     local level = 0;
 
-    function asMsg(arg0, arg1, arg2, arg3, arg4, arg5) 
-        local msg = '\n';
-        if nil ~= arg5 then
-            msg = string.format("%s %s %s %s %s %s\n", arg0, arg1, arg2, arg3, arg4, arg5);
-        elseif nil ~= arg4 then
-            msg = string.format("%s %s %s %s %s\n", arg0, arg1, arg2, arg3, arg4);
-        elseif nil ~= arg3 then
-            msg = string.format("%s %s %s %s\n", arg0, arg1, arg2, arg3);
-        elseif nil ~= arg2 then
-            msg = string.format("%s %s %s\n", arg0, arg1, arg2);
-        elseif nil ~= arg1 then
-            msg = string.format("%s %s\n", arg0, arg1);
-        elseif nil ~= arg0 then
-            msg = string.format("%s\n", arg0);
-        else 
-            msg = 'nil\n';
-        end;
 
-        return msg;
-    end;    
-
-    function output(level, arg0, arg1, arg2, arg3, arg4, arg5) 
+    function output(level, args) 
+        local msgs = {};
+        
         if nil ~= prefix then
-            freeswitch.consoleLog(level, '['..prefix..']'..asMsg(arg0, arg1, arg2, arg3, arg4, arg5));
-        else
-            freeswitch.consoleLog(level, asMsg(arg0, arg1, arg2, arg3, arg4, arg5));
+            table.insert(msgs, '[');
+            table.insert(msgs, prefix);
+            table.insert(msgs, ']');
         end;
+        
+        for i, arg in ipairs(args) do
+            if nil ~= arg then
+                table.insert(msgs, arg);
+            end;
+        end;
+        
+        table.insert(msgs, '\n');
+        freeswitch.consoleLog(level, table.concat(msgs, ' '));
     end;
 
-    log.debug = function(arg0, arg1, arg2, arg3, arg4, arg5)
-        output('DEBUG', arg0, arg1, arg2, arg3, arg4, arg5);
+    log.debug = function(...)
+        output('DEBUG', {...});
     end;
 
-    log.info = function(arg0, arg1, arg2, arg3, arg4, arg5)
-        output('INFO', arg0, arg1, arg2, arg3, arg4, arg5);
+    log.info = function(...)
+        output('INFO', {...});
     end;
 
-    log.notice = function(arg0, arg1, arg2, arg3, arg4, arg5)
-        output('NOTICE', arg0, arg1, arg2, arg3, arg4, arg5);
+    log.notice = function(...)
+        output('NOTICE', {...});
     end;
 
-     log.warn = function(arg0, arg1, arg2, arg3, arg4, arg5)
-        output('WARNING', arg0, arg1, arg2, arg3, arg4, arg5);
+     log.warn = function(...)
+        output('WARNING', {...});
     end;
 
     return log;
@@ -90,32 +82,38 @@ end;
 
 
 function batchSendSMS(from_user, toUsers, ...)
-    local args = {...};
+    local buf;
+    local logger = getLogger('batchSendSMS');
 
     -- msg
     local msg = "";
-    for index, arg in ipairs(args) do
+    buf = newStringBuilder();
+    for index, arg in ipairs({...}) do
         if index ~= 1 then 
-            msg = msg .."\n".. arg;
+            buf.append('\n').append(arg);
         else
-            msg = arg;
+            buf.append(arg);
         end;
     end;
+    msg = buf.toString();
 
-    -- sql
+    -- select regist info 
     local sql;
     local hasReceivers = false;
-    sql = "SELECT distinct user_id, realm, profile from t_registration_ext where user_id in ";
-    sql = sql ..'(';
+
+    buf = newSqlBuilder("SELECT distinct user_id, realm, profile from t_registration_ext where user_id in ");
+    buf.append('(');
     for index, to in ipairs(toUsers) do
         if index ~= 1 then 
-            sql = sql ..",'".. to .."'";
+            buf.append(",'").append(to).append("'");
         else
-            sql = sql .."'".. to .."'";
+            buf.append("'").append(to).append("'");
         end;
         hasReceivers = true;
     end;
-    sql = sql ..')';
+    buf.append(')');
+    sql = buf.toString();
+    logger.info(sql);
 
     -- interrupted if no receivers
     if not hasReceivers then return false; end;
@@ -126,11 +124,21 @@ function batchSendSMS(from_user, toUsers, ...)
     local to_proto = 'sip';
     local sip_port = freeswitch.getGlobalVariable('internal_sip_port');
     executeQuery(sql, function(row)
-        local from = string.format("%s@%s", from_user, row['realm']);
-        local from_full = string.format('sip:%s@%s:%s', from_user, row['realm'], sip_port);
         local to_user = row['user_id'];
-        local to = string.format("%s@%s", to_user, row['realm']);
         local profile = row['profile'];
+        local from = newStringBuilder()
+                        .append(from_user)
+                        .append('@')
+                        .append(row['realm']).toString();
+        local from_full = newStringBuilder("sip:")
+                            .append(from_user)
+                            .append('@').append(row['realm'])
+                            .append(':')
+                            .append(sip_port).toString();
+        local to = newStringBuilder()
+                        .append(to_user)
+                        .append('@')
+                        .append(row['realm']).toString();
 
         local event = freeswitch.Event("CUSTOM", "SMS::SEND_MESSAGE");
         event:addHeader("proto",      from_proto);
@@ -149,121 +157,81 @@ function batchSendSMS(from_user, toUsers, ...)
         event:chat_execute("send");
         hasSentIt = true;
 
-        local logger = getLogger('sms');
-        logger.info(from_full, '-->', to, '\n', msg);
-
+        logger.debug(from_full, '-->', to, '\n', msg);
     end);
+
+    logger.info('user[', from_user, '] finish send ', msg);
 
     return hasSentIt;
 end;
 
-function sendSMS(fromUrl, toUrl, arg0, arg1, arg2, arg3, arg4, arg5)
-    function v (arg)
-        if nil == arg then return ''; else return arg; end;
-    end;
+function sendSMS(from_user, to_user, ...)
+    local buf;
+    local logger = getLogger('sendSMS');
 
-    local msg;
-    local endArgs = false;
-
-    if     nil ~= arg5 then msg = string.format('%s\n%s\n%s\n%s\ns\ns\n', v(arg0), v(arg1), v(arg2), v(arg3), v(arg4), v(arg5));
-    elseif nil ~= arg4 then msg = string.format('%s\n%s\n%s\n%s\ns\n',    v(arg0), v(arg1), v(arg2), v(arg3), v(arg4));
-    elseif nil ~= arg3 then msg = string.format('%s\n%s\n%s\n%s\n',       v(arg0), v(arg1), v(arg2), v(arg3));
-    elseif nil ~= arg2 then msg = string.format('%s\n%s\n%s\n',           v(arg0), v(arg1), v(arg2));
-    elseif nil ~= arg1 then msg = string.format('%s\n%s\n',               v(arg0), v(arg1));
-    elseif nil ~= arg0 then msg = string.format('%s\n',                   v(arg0));
-    else msg ='\n';
-    end;
-
-
-    -- decode sip url
-    local hostname = freeswitch.API():execute("global_getvar", "global_hostname");
-    if nil == hostname or '' == hostname then
-        hostname = '0.0.0.0';
-        print('global_hostname in vars.xml is unknown');
-    end;
-    local sip_port = freeswitch.getGlobalVariable('internal_sip_port');
-    function readUrl(url, defaultHost)
-        local proto = 'sip';
-        local user_name;
-        local user;
-        local user_full;
-
-        --  sip:122@chenxh.thunisoft.com:9060
-        for v1, v2, v3, v4 in string.gmatch(url, "([^:]+):([^@]+)@([^:]+):([^;]+)(.*)") do
-            proto = v1;
-            user_name = v2;
-            user = v2..'@'..v3;
-            user_full = v1 ..':'..v2..'@'..v3..':'..v4;
-
-            return proto, user_name, user, user_full;
+    -- msg
+    local msg = "";
+    buf = newStringBuilder();
+    for index, arg in ipairs({...}) do
+        if index ~= 1 then 
+            buf.append('\n').append(arg);
+        else
+            buf.append(arg);
         end;
-
-        --  sip:122@chenxh.thunisoft.com
-        for v1, v2, v3 in string.gmatch(url, "([^:]+):([^@]+)@([^;]+)(.*)") do
-            proto = v1;
-            user_name = v2;
-            user = v2..'@'..v3;
-            user_full = v1 ..':'..v2..'@'..v3..':'..sip_port;
-
-            return proto, user_name, user, user_full;
-        end;
-
-        --  122@chenxh.thunisoft.com
-        for v2, v3 in string.gmatch(url, "([^@]+)@([^;]+)(.*)") do
-            user_name = v2;
-            user = v2..'@'..v3;
-            user_full = 'sip:'..v2..'@'..v3..':'..sip_port;
-            return proto, user_name, user, user_full;
-        end;
-
-        --  122@
-        for v2 in string.gmatch(url, "([^@]+)@") do
-            user_name = v2;
-            user = v2..'@'..defaultHost;
-            user_full = 'sip:'..v2..'@'..defaultHost..':'..sip_port;
-            return proto, user_name, user, user_full;
-        end;
-
-        --  122        
-        local v2 = url;
-        user_name = v2;
-        user = v2..'@'..defaultHost;
-        user_full = 'sip:'..v2..'@'..defaultHost..':'..sip_port;
-        return proto, user_name, user, user_full;
     end;
+    msg = buf.toString();
 
-
-
-    local from_proto, from_user, from = readUrl(fromUrl, hostname);
-    local to_proto, to_user, to, to_full = readUrl(toUrl, '0.0.0.0');
-
-
-    local hasSentIt = false;
+    -- select regist info 
     local sql;
-    sql = string.format("SELECT distinct user_id, realm, profile from t_registration_ext where user_id='%s'", to_user);
+    buf = newSqlBuilder("SELECT distinct user_id, realm, profile from t_registration_ext where user_id = ");
+    buf.format("'%s'", to_user);
+    sql = buf.toString();
+    logger.info(sql);
+
+
+    -- send it
+    local hasSentIt = false;
+    local from_proto = 'sip';
+    local to_proto = 'sip';
+    local sip_port = freeswitch.getGlobalVariable('internal_sip_port');
     executeQuery(sql, function(row)
+        local to_user = row['user_id'];
+        local profile = row['profile'];
+        local from = newStringBuilder()
+                        .append(from_user)
+                        .append('@')
+                        .append(row['realm']).toString();
+        local from_full = newStringBuilder("sip:")
+                            .append(from_user)
+                            .append('@').append(row['realm'])
+                            .append(':')
+                            .append(sip_port).toString();
+        local to = newStringBuilder()
+                        .append(to_user)
+                        .append('@')
+                        .append(row['realm']).toString();
+
         local event = freeswitch.Event("CUSTOM", "SMS::SEND_MESSAGE");
-        local from_full = string.format('sip:%s@%s:%s', from_user, row['realm'], sip_port);
-        local to = string.format('%s@%s', row['user_id'], row['realm']);
         event:addHeader("proto",      from_proto);
         event:addHeader("dest_proto", to_proto);
         event:addHeader("from",       from);
         event:addHeader("from_user",  from_user);
         event:addHeader("from_full",  from_full); 
         event:addHeader("to",         to);
-        event:addHeader("to_user",    row['user_id']);
+        event:addHeader("to_user",    to_user);
+        event:addHeader("sip_profile", profile); -- sofia status profile internal reg
         event:addHeader("type", "text/plain");
         event:addHeader("replying", "false");
-        event:addHeader("sip_profile", row['profile']); -- sofia status profile internal reg
 
 
         event:addBody(msg);
         event:chat_execute("send");
         hasSentIt = true;
 
-        local logger = getLogger('sms');
-        logger.info(from_full, '-->', to, '\n', msg);
+        logger.debug(from_full, '-->', to, '\n', msg);
     end);
+
+    logger.info('user[', from_user, '] finish send ', msg);
 
     return hasSentIt;
 end;

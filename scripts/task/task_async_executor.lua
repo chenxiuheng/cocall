@@ -9,8 +9,9 @@ require('user.userService');
 -- ///////////////////////////////////////////////
 local A = {};
 A.api_send_conferences = function (from_user, to_user)
-    local buf = newStringBuilder('conference-list');
     local conferences = getMyConferences(to_user);
+
+    local buf = newStringBuilder('conference-list');
     for i, info in ipairs(conferences) do
         buf.append('\n');
 
@@ -21,6 +22,7 @@ A.api_send_conferences = function (from_user, to_user)
         buf.append(info['age']).append(';');
         buf.append(info['num_is_in']).append('/').append(info['num_member']).append(';');
     end;
+    buf.append('\n');
 
     sendSMS(from_user, to_user, buf.toString());
 end;

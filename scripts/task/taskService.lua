@@ -105,12 +105,9 @@ function setTimeoutIfAbsent(id, cmd, millisec)
 end;
 
 function clearTimeout(id)
-    local sql;
-    sql = sqlstring.format(
-            "update t_task_timeout set n_executed = 1 where id='%s'",
-            id
-        );
-    executeUpdate(sql);
+    newSqlBuilder("update t_task_timeout set n_executed = 1 where id=")
+        .append("'").append(id).append("'")
+        .update();
 end;
 
 function getExecuteTasks()
