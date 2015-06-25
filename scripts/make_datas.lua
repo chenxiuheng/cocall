@@ -27,8 +27,8 @@ while num_conferences > 0 do
     local member = {};
     while num_users > 0 do
         num_users = num_users - 1;
-        member['user'] = num_conferences % 10000;
-        member['name'] = string.format('user/%s/%s', num_conferences % 10000, num_conferences);
+        member['user'] = "10"..(num_conferences % 10000 + num_users * 10001);
+        member['name'] = string.format('user/%s/%s', member['user'], num_conferences);
         
         service.addMember(member, true);
     end;
