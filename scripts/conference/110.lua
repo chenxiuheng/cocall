@@ -48,6 +48,7 @@ if nil ~= i then
 
         local phoneNo;
 
+        local fastInsert = true;
         local rowIndex = 1;
         for v2, v3 in string.gmatch(params, "([^;]*)[;]?([^\n]*)\n") do
 
@@ -63,7 +64,7 @@ if nil ~= i then
                 local member = {};
                 member['user'] = v2;
                 member['name'] = v3;
-                service.addMember(member);
+                service.addMember(member, fastInsert);
                 sendSMS(phoneNo, v2, "conference-join", service.toSimpleString());
             end;
 
