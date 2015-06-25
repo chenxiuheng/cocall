@@ -52,7 +52,7 @@ function getLogger(prefix)
         end;
         
         for i, arg in ipairs(args) do
-            if type(arg) == 'string' then
+            if type(arg) == 'string' or type(arg) == 'number' then
                 table.insert(msgs, arg);
             elseif nil == arg then
                 -- do nothing
