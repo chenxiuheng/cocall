@@ -5,7 +5,7 @@ require('task.taskService');
 
 local logger = getLogger('onStartup');
 local sql;
-sql = string.format('update t_conference_member set n_is_in=2 where n_is_in<>2');
+sql = 'update t_conference_member set n_is_in=2, n_has_video=2, d_speak = null, n_member_id = null where n_is_in<>2';
 executeUpdate(sql);
 
 sql = string.format('update t_conference set n_is_running=2 where n_is_running<>2');
