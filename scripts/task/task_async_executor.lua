@@ -1,42 +1,43 @@
-require('libs.commons');
-require('libs.db');
 require('task.taskService');
-require('conference.conferenceService');
-require('user.userService');
 
 -- ///////////////////////////////////////////////
 --   API define(s)
 -- ///////////////////////////////////////////////
+local thread_max = 32;
+local thread_remains = thread_max;
+function execute(cmd)
+    thread_remains = thread_remains - 1;
+
+    if (thread_remains < 0) then
+        thread_remains = thread_max;
+        freeswitch.API():execute('lua', cmd);
+    else
+        -- async execute
+        freeswitch.API():execute('luarun', cmd);
+    end;
+end;
+
 local A = {};
 A.api_send_conferences = function (from_user, to_user)
-    local conferences = getMyConferences(to_user);
+    local cmd = newStringBuilder("task/api_send_conferences.lua");
+    cmd.append(" ").append(from_user);
+    cmd.append(" ").append(to_user);
 
-    local buf = newStringBuilder('conference-list');
-    for i, info in ipairs(conferences) do
-        buf.append('\n');
-
-        buf.append(info['conference']).append(';');
-        buf.append(info['name']).append(';');
-        buf.append(info['creator']).append(';');
-        buf.append(info['creator_name']).append(';');
-        buf.append(info['age']).append(';');
-        buf.append(info['num_is_in']).append('/').append(info['num_member']).append(';');
-    end;
-    buf.append('\n');
-
-    sendSMS(from_user, to_user, buf.toString());
+    execute(cmd.toString());
 end;
 
 A.api_dispatch_member_list = function (confPhone)
-    local service;
-    service = newConferenceService(confPhone);
-    service.dispatchMemberStates();
+    local cmd = newStringBuilder("task/api_dispatch_member_list.lua");
+    cmd.append(" ").append(confPhone);
+
+    execute(cmd.toString());
 end;
 
 A.api_dispatch_member_energy = function (confPhone)
-    local service;
-    service = newConferenceService(confPhone);
-    service.dispatchMemberEnergies();
+    local cmd = newStringBuilder("task/api_dispatch_member_energy.lua");
+    cmd.append(" ").append(confPhone);
+
+    execute(cmd.toString());
 end;
 
 A.api_clear_registrationExt = function()

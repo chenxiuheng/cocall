@@ -52,8 +52,12 @@ function getLogger(prefix)
         end;
         
         for i, arg in ipairs(args) do
-            if nil ~= arg then
+            if type(arg) == 'string' then
                 table.insert(msgs, arg);
+            elseif nil == arg then
+                -- do nothing
+            else
+              freeswitch.consoleLog('ERROR', "unsupported "..type(arg));
             end;
         end;
         

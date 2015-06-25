@@ -125,7 +125,7 @@ if not isTemplateConference then
         -- // dispatch member energy after 500ms
         local task_id = string.format("conference/%s/energy", confPhone);
         local cmd = "api_dispatch_member_energy "..confPhone;
-        setTimeoutIfAbsent(task_id, cmd, 500);
+        setTimeoutIfAbsent(task_id, cmd, 300);
     elseif action == 'stop-talking' then
         local energy = '0';
         local level = event:getHeader('Energy-Level');
@@ -137,7 +137,7 @@ if not isTemplateConference then
         -- // dispatch member energy after 500ms
         local task_id = string.format("conference/%s/energy", confPhone);
         local cmd = "api_dispatch_member_energy "..confPhone;
-        setTimeoutIfAbsent(task_id, cmd, 500);
+        setTimeoutIfAbsent(task_id, cmd, 300);
     end;
 else
     local action = event:getHeader('Action');
