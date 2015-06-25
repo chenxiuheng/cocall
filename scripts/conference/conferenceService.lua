@@ -188,7 +188,7 @@ function setConferenceMemberIn (confPhone, user, memberId)
 end;
 
 function setConferenceMemberOut(confPhone, user, memberId)
-    newSqlBuilder(" update t_conference_member set n_is_in=2, n_has_video=2 ")
+    newSqlBuilder(" update t_conference_member set n_is_in=2, n_has_video=2, d_speak = null, n_member_id = null ")
           .append(" where c_conference_phone_no='%s'", confPhone)
           .append(" and c_phone_no='%s'", user)
           .append(" and n_member_id=%s", memberId)
@@ -377,48 +377,39 @@ function newConferenceService(confPhone)
         releaseInfo();
     end;
 
-    service.addMember=function(member, firstInsert)
+    service.addMember=function(member, fastInsert)
         local uuid = confPhone..'.'..member['user'];
         local user = member['user'];
         local name = member['name'];
 
-        -- check it existed
-        local sql;
-        local existed = false;
-        if nil ~= firstInsert and firstInsert then
-            sql = sqlstring.format(
-                    "select count(*) num from t_conference_member where c_conference_phone_no = '%s' and c_phone_no = '%s'",
-                    confPhone, user
-                );
-            executeQuery(sql, function(row)
-                if row['num'] ~= '0' then existed = true end;
-            end);
-
-            if existed then return true; end; -- existed, do nothing
+        -- check exists
+        if nil == fastInsert or not fastInsert then
+            local existed = false;
+            newSqlBuilder(" select count(*) num from t_conference_member")
+                .append("   where c_conference_phone_no = '%s'", confPhone)
+                .append("   and c_phone_no = '%s'", user)
+                .query(function(row)
+                    if row['num'] ~= '0' then existed = true end;
+                end);
+            if existed then
+                return false;
+            end;
         end;
-        
 
-        local info = getInfo();
-        if nil == info then return false; end; -- NO conference found
-        if not isTrue(info['valid']) then 
-            logger.warn("can't add-member in invalid conference[", confPhone, ']');
-            return false; 
-        end; -- not valid
-
-        -- insert into DB if not existed
-        local isModerator =  2;
-        if member['user'] == info['moderator'] then isModerator = 1 end;
-
-        sql = sqlstring.format(
-                'insert into t_conference_member '..
-                "   (c_id, c_conference_phone_no, c_phone_no, c_name, d_created, n_is_modirator, n_can_hear, n_can_speak)"..
-                " values "..
-                "   ('%s', '%s', '%s', '%s', now(), '%s', %s, %s) ",
-                uuid, confPhone, user, name, isModerator, 1, 1
-            );
-
-        -- save creator as a member of conference
-        executeUpdate(sql);              
+        -- save to DB        
+        newSqlBuilder("insert into t_conference_member ")
+            .append(" (c_id, c_conference_phone_no, c_phone_no, c_name, d_created, n_is_modirator, n_can_hear, n_can_speak) ")
+            .append(" values ")
+            .format("( '%s'", uuid)
+            .format(", '%s'", confPhone)
+            .format(", '%s'", user)
+            .format(", '%s'", name)
+            .format(", now()")
+            .format(", 2")
+            .format(", 1")
+            .format(", 1")
+            .format(") ")
+            .update();
 
         return true;
     end;
