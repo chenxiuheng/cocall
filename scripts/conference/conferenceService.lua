@@ -270,7 +270,7 @@ function getMyConferences (memberPhone, runningOnly)
     buf.append(" conf.c_creator_name as creator_name, ");
     buf.append(" conf.c_profile, ");
     buf.append(" conf.n_valid as valid, ");
-    buf.append("  (extract(epoch from now()) - extract(epoch from d_created)) as age,");
+    buf.append("  ceil(extract(epoch from now()) - extract(epoch from d_created)) as age,");
     buf.append(" (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no) as num_member, ");
     buf.append(" (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no and n_is_in = 1) as num_is_in ");
     buf.append(" FROM ");
@@ -286,6 +286,63 @@ function getMyConferences (memberPhone, runningOnly)
 
     return buf.list();
 end;
+
+function clearInvalidConferences()
+    -- clear
+    sql = [[
+        delete from t_conference_old where c_phone_no in 
+        (select c_phone_no from t_conference)
+    ]];
+    executeUpdate(sql);
+
+    -- copy
+    local sql = [[
+           INSERT INTO t_conference_old(
+	        c_phone_no,
+	        c_modirator_phone_no,
+	        c_name,
+	        d_created,
+	        d_plan,
+	        n_valid,
+	        d_started,
+	        c_unique_id,
+	        c_profile,
+	        c_creator,
+	        c_creator_name,
+	        n_is_running,
+	        d_updated,
+	        n_updated
+        ) SELECT
+	        c_phone_no,
+	        c_modirator_phone_no,
+	        c_name,
+	        d_created,
+	        d_plan,
+	        n_valid,
+	        d_started,
+	        c_unique_id,
+	        c_profile,
+	        c_creator,
+	        c_creator_name,
+	        n_is_running,
+	        d_updated,
+	        n_updated
+        FROM
+	        t_conference
+        WHERE
+	        n_valid = 2
+        ]];
+    executeUpdate(sql);
+    
+    -- delete repeated
+    sql = [[
+        delete from t_conference 
+        WHERE n_valid = 2 and EXISTS 
+        (select o.c_phone_no from t_conference_old o where o.c_phone_no = c_phone_no)
+    ]];
+    executeUpdate(sql);
+end;
+
 -----// END   Conference DAO ---------------------------------------------
 
 

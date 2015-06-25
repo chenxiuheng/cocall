@@ -13,7 +13,10 @@ executeUpdate(sql);
 
 sql = string.format('delete from t_registration_ext');
 executeUpdate(sql);
-setInterval('test', 'api_clear_registrationExt', 3000)
+
+setInterval('clear_regist', 'api_clear_registrationExt', 3000);
+setInterval('clear_timeout', 'api_clear_executed_timeout', 18000);
+setInterval('clear_conferences', 'api_clear_invalid_conferences', 18000);
 
 local last_clock = now();
 local clock_rate = 97;

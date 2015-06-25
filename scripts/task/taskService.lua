@@ -108,6 +108,12 @@ function clearTimeout(id)
         .update();
 end;
 
+function clearExecutedTimeout()
+    newSqlBuilder("delete from t_task_timeout where n_executed=1")
+        .append("  and d_execute < now() + interval '%s second'", -1800)
+        .update();
+end;
+
 function getExecuteTasks()
     local buf = newSqlBuilder();
     buf.append(" select id, c_api as cmd, -1 as timeout, 'timeout' as type, ");

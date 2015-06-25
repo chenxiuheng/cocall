@@ -1,0 +1,3 @@
+require('conference.conferenceService');
+
+clearInvalidConferences();

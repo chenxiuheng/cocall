@@ -44,6 +44,17 @@ A.api_clear_registrationExt = function()
    -- don't clear
    -- deleteRegistrationExtOutOfDate();
 end;
+
+A.api_clear_executed_timeout = function()
+    local cmd = newStringBuilder("task/api_clear_executed_timeout.lua");
+
+    execute(cmd.toString());
+end;
+A.api_clear_invalid_conferences = function()
+    local cmd = newStringBuilder("task/api_clear_invalid_conferences.lua");
+
+    execute(cmd.toString());
+end;
 -- // end
 
 local logger = getLogger('task_async_executor');
