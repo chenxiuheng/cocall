@@ -209,12 +209,12 @@ function createConference (name, creator, creatorName)
           .append(" (c_phone_no, c_modirator_phone_no, c_name, c_creator, c_creator_name," )
           .append(" d_created, d_updated, d_plan, n_valid, c_profile,  n_is_running)")
           .append(" values ")
-          .format(" ('%s'", phoneNo);
-          .format(" ,'%s'", creator);
-          .format(" ,'%s'", name);
-          .format(" ,'%s'", creator);
-          .format(" ,'%s'", creatorName);
-          .append(" ,now(),  now(), now(), 1, 'default', 2");
+          .format(" ('%s'", phoneNo)
+          .format(" ,'%s'", creator)
+          .format(" ,'%s'", name)
+          .format(" ,'%s'", creator)
+          .format(" ,'%s'", creatorName)
+          .append(" ,now(),  now(), now(), 1, 'default', 2")
           .append(" )")
           .update();
 
@@ -444,7 +444,7 @@ function newConferenceService(confPhone)
 
         -- delete from db
         newSqlBuilder(" delete from t_conference_member ")
-              .format(" where c_conference_phone_no = '%s' ", confPhone);
+              .format(" where c_conference_phone_no = '%s' ", confPhone)
               .format(" AND c_phone_no = '%s'", user)
               .update();
 
