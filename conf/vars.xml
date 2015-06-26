@@ -428,8 +428,8 @@
   
   <!-- Internal SIP Profile -->
   <X-PRE-PROCESS cmd="set" data="internal_auth_calls=true"/>
-  <X-PRE-PROCESS cmd="set" data="internal_sip_port=5060"/>
-  <X-PRE-PROCESS cmd="set" data="internal_tls_port=5061"/>
+  <X-PRE-PROCESS cmd="set" data="internal_sip_port=5090"/>
+  <X-PRE-PROCESS cmd="set" data="internal_tls_port=5091"/>
   <X-PRE-PROCESS cmd="set" data="internal_ssl_enable=false"/>
 
 
