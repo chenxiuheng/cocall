@@ -56,15 +56,19 @@ if nil ~= confPhone and nil ~=  from_user then
         service.destroy();
     elseif action == 'conference_mute'  then
         for user in string.gmatch(params, "([^\n]*)\n") do
-            service.mute(user);
-            logger.notice(from_user, 'mute', user);
+            if nil ~= user and '' ~= user then
+                service.mute(user);
+                logger.notice(from_user, 'mute', user);
+            end;
         end;
 
         service.notifyAll();
     elseif action == 'conference_unmute' then
         for user in string.gmatch(params, "([^\n]*)\n") do
-            service.unmute(user);
-            logger.notice(from_user, 'unmute', user);
+            if nil ~= user and '' ~= user then
+                service.unmute(user);
+                logger.notice(from_user, 'unmute', user);
+            end;
         end;
 
         service.notifyAll();

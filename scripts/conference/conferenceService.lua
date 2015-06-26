@@ -233,6 +233,13 @@ function setConferenceIsRunning(confPhone, n_is_running)
             confPhone
         );
     executeUpdate(sql);
+
+    -- not running
+    if 1 ~= n_is_running then
+        newSqlBuilder(" update t_conference_member set n_is_in=2, n_has_video=2, d_speak = null, n_member_id = null ")
+              .append(" where c_conference_phone_no='%s'", confPhone)
+              .update();
+    end;
 end;
 
 function getConferenceInfo(confPhone)
@@ -289,58 +296,32 @@ end;
 
 function clearInvalidConferences()
     -- clear
-    sql = [[
-        delete from t_conference_old where c_phone_no in 
-        (select c_phone_no from t_conference)
-    ]];
-    executeUpdate(sql);
+    newSqlBuilder()
+        .append(" delete from t_conference_old where c_phone_no in ")
+        .append(" (select c_phone_no from t_conference)")
+        .update();
 
+    
     -- copy
-    local sql = [[
-           INSERT INTO t_conference_old(
-	        c_phone_no,
-	        c_modirator_phone_no,
-	        c_name,
-	        d_created,
-	        d_plan,
-	        n_valid,
-	        d_started,
-	        c_unique_id,
-	        c_profile,
-	        c_creator,
-	        c_creator_name,
-	        n_is_running,
-	        d_updated,
-	        n_updated
-        ) SELECT
-	        c_phone_no,
-	        c_modirator_phone_no,
-	        c_name,
-	        d_created,
-	        d_plan,
-	        n_valid,
-	        d_started,
-	        c_unique_id,
-	        c_profile,
-	        c_creator,
-	        c_creator_name,
-	        n_is_running,
-	        d_updated,
-	        n_updated
-        FROM
-	        t_conference
-        WHERE
-	        n_valid = 2
-        ]];
-    executeUpdate(sql);
+    newSqlBuilder()
+        .append(" INSERT INTO t_conference_old( ")
+        .append("   c_phone_no, c_modirator_phone_no, c_name,d_created,")
+        .append("   d_plan,n_valid,d_started,c_unique_id,c_profile,c_creator,")
+        .append("   c_creator_name,n_is_running,d_updated,n_updated")
+        .append(" ) SELECT ")
+        .append("   c_phone_no, c_modirator_phone_no, c_name,d_created,")
+        .append("   d_plan,n_valid,d_started,c_unique_id,c_profile,c_creator,")
+        .append("   c_creator_name,n_is_running,d_updated,n_updated")
+        .append(" FROM t_conference")
+        .append(" WHERE n_valid = 2")
+        .update();
     
     -- delete repeated
-    sql = [[
-        delete from t_conference 
-        WHERE n_valid = 2 and EXISTS 
-        (select o.c_phone_no from t_conference_old o where o.c_phone_no = c_phone_no)
-    ]];
-    executeUpdate(sql);
+    newSqlBuilder()
+        .append(" delete from t_conference ")
+        .append(" WHERE n_valid = 2 and EXISTS ")
+        .append(" (select o.c_phone_no from t_conference_old o where o.c_phone_no = c_phone_no)")
+        .update();
 end;
 
 -----// END   Conference DAO ---------------------------------------------
