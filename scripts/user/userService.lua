@@ -1,7 +1,7 @@
 
 function saveRegistrationExt(call_id, profile, user_id, user_agent, realm, local_host, contact, expires)
     local sql;
-    sql = sqlstring.format("delete from t_registration_ext where call_id='%s'", call_id);
+    sql = sqlstring.format("delete from t_registration_ext where user_id='%s'", user_id);
     executeUpdate(sql);
 
     sql = sqlstring.format(
