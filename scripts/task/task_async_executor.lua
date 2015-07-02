@@ -41,8 +41,7 @@ A.api_dispatch_member_energy = function (confPhone)
 end;
 
 A.api_clear_registrationExt = function()
-   -- don't clear
-   -- deleteRegistrationExtOutOfDate();
+    freeswitch.API():execute('lua', "task/api_clear_registrationExt.lua"); -- must synch
 end;
 
 A.api_clear_executed_timeout = function()

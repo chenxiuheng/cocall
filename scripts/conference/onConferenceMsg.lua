@@ -37,23 +37,21 @@ if nil ~= confPhone and nil ~=  from_user then
         end
 
         service.notifyAll();
+    elseif action == 'conference_destroy' then
+        service.service.sayTo("all", from_user, 'conference-kicked');
+        service.destroy();
+    elseif action == 'conference_leave' then
+        service.removeMember(from_user);
+        service.notifyAll();
     elseif action == 'conference_kick' then
         for user in string.gmatch(params..'\n', "([^\n]*)\n") do
             if '' ~= user then
-                service.kick(user, from_user);
-                sendSMS(confPhone, user, "conference-kick", service.toSimpleString());
-
+                service.removeMember(user);
+                sendSMS(confPhone, user, "conference-kicked", service.toSimpleString());
             end;
         end;
 
         service.notifyAll();
-    elseif action == 'conference_destroy' then
-        local members = service.getMembers('all');
-        for i, member in ipairs(members) do
-            sendSMS(confPhone, member['user'], 'conference-destroy', service.toSimpleString());
-        end;
-
-        service.destroy();
     elseif action == 'conference_mute'  then
         for user in string.gmatch(params, "([^\n]*)\n") do
             if nil ~= user and '' ~= user then

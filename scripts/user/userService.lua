@@ -1,3 +1,5 @@
+require('libs.db');
+require('libs.commons');
 
 function saveRegistrationExt(call_id, profile, user_id, user_agent, realm, local_host, contact, expires)
     local sql;
@@ -21,7 +23,7 @@ end;
 
 function deleteRegistrationExtOutOfDate()
     local sql;
-    sql = sqlstring.format("delete from t_registration_ext where expired < now()");
+    sql = "delete from t_registration_ext where expired < now()";
     --executeUpdate(sql);
 end;
 

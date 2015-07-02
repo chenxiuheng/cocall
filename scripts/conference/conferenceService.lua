@@ -421,9 +421,6 @@ function newConferenceService(confPhone)
     end;
 
     service.addMember=function(member, fastInsert)
-        local uuid = confPhone..'.'..member['user'];
-        local user = member['user'];
-        local name = member['name'];
 
         -- check exists
         if nil == fastInsert or not fastInsert then
@@ -441,10 +438,9 @@ function newConferenceService(confPhone)
 
         -- save to DB        
         newSqlBuilder("insert into t_conference_member ")
-            .append(" (c_id, c_conference_phone_no, c_phone_no, c_name, d_created, n_is_modirator, n_can_hear, n_can_speak) ")
+            .append(" ( c_conference_phone_no, c_phone_no, c_name, d_created, n_is_modirator, n_can_hear, n_can_speak) ")
             .append(" values ")
-            .format("( '%s'", uuid)
-            .format(", '%s'", confPhone)
+            .format("( '%s'", confPhone)
             .format(", '%s'", user)
             .format(", '%s'", name)
             .format(", now()")
@@ -462,25 +458,37 @@ function newConferenceService(confPhone)
     end;
     
 
-    service.kick = function(user, operator)
+    service.removeMember = function(user)
         local sql;
+        local numDeleted = 0;
+        local numSum = 0;
         
-        -- kick from swtich
-        local members = getConferenceMembers(confPhone, user);
-        for i, member in ipairs(members) do
-            local member_id    = member['member_id'];
-            if isTrue(member['is_in']) and nil ~= member_id then
-                freeswitch.API():execute('conference', confPhone..' kick '.. member_id);
-                logger.info('kick ', member['user'], 'from conference[', confPhone, '] member-id=', member_id);
-                sendSMS(confPhone, member['user'], 'conference-kicked', 'you are kick by ' .. operator);
-            end;
-        end;
+        -- WARNING: 
+        -- can't call confernce XXX kick member_id maybe cause deadlock
+
 
         -- delete from db
-        newSqlBuilder(" delete from t_conference_member ")
+        numDeleted = newSqlBuilder(" delete from t_conference_member ")
+                      .format(" where c_conference_phone_no = '%s' ", confPhone)
+                      .format(" AND c_phone_no = '%s'", user)
+                      .update();
+
+        -- if only one member, set him as moderator
+        if (numSum - numDeleted == 1) then
+            newSqlBuilder(" update t_conference_member ")
+              .append(" set n_is_modirator = 1")
               .format(" where c_conference_phone_no = '%s' ", confPhone)
-              .format(" AND c_phone_no = '%s'", user)
+              .format(" AND 1 = (select count(*) from t_conference_member as mem where mem.c_conference_phone_no = '%s')", confPhone)
               .update();
+
+            newSqlBuilder(" update t_conference ")
+              .append(" set c_modirator_phone_no = ")
+              .append(" (select c_phone_no from t_conference_member as mem ")
+              .format("  where mem.n_is_modirator = 1 and mem.c_conference_phone_no = '%s'", confPhone)
+              .append(" )")
+              .format(" where c_phone_no = '%s' ", confPhone)
+              .update();
+        end;
 
         releaseInfo();
     end;
@@ -493,18 +501,6 @@ function newConferenceService(confPhone)
                 confPhone
             );
         executeUpdate(sql);
-
-        -- kick from swtich
-        local is_in;
-        local memberId;
-        local members = getConferenceMembers(confPhone);
-        for i, member in ipairs(members) do
-            is_in = member['is_in'];
-            memberId = member['member_id'];
-            freeswitch.API():execute('conference', confPhone ..' kick '.. memberId);
-        end;
-
-        dispatchSMS(members, 'conference-destroy');
 
         releaseInfo();
     end;
