@@ -37,24 +37,24 @@ function getConferenceMembers(confPhone, user, except)
     buf.append(" mem.n_member_id as member_id, ");
     buf.append(" mem.n_can_speak as can_speak, ");
     buf.append(" (select count(*) from t_registration_ext as ext  where ext.user_id=mem.c_phone_no and expired > now()) as num_reg, ");
-    buf.append(" mem.n_is_modirator as is_moderator ");
+    buf.append(" mem.n_is_moderator as is_moderator ");
     buf.append(" FROM ");
     buf.append(" t_conference_member AS mem ");
     buf.format(" where mem.c_conference_phone_no = '%s' ", confPhone);
 
 
     if 'non_moderator' == user then 
-        buf.append("  and n_is_modirator <> 1");
+        buf.append("  and n_is_moderator <> 1");
     elseif 'moderator' == user then
-        buf.append("  and n_is_modirator = 1");
+        buf.append("  and n_is_moderator = 1");
     elseif 'all' ~= user and nil ~= user then
         buf.format(" AND mem.c_phone_no='%s'", user);
     end;
 
     if 'non_moderator' == except then 
-        buf.append(" and n_is_modirator = 1");
+        buf.append(" and n_is_moderator = 1");
     elseif 'moderator' == except then
-        buf.append(" and n_is_modirator <> 1");
+        buf.append(" and n_is_moderator <> 1");
     elseif nil ~= except then
         buf.format(" AND mem.c_phone_no<>'%s'", except);
     end;
@@ -87,7 +87,7 @@ function updateConferenceMemberFields(confPhone, user, field, value)
     buf.format(" where c_conference_phone_no = '%s' ", confPhone);
 
     if 'non_moderator' == user then
-        buf.append("  and n_is_modirator <> 1 ");
+        buf.append("  and n_is_moderator <> 1 ");
     elseif nil ~= user then
         buf.format("  and c_phone_no = '%s' ", user);
     end;
@@ -132,13 +132,13 @@ end;
 function setConferenceModerator(confPhone, user)
     local sql;
     sql = sqlstring.format(
-            "update t_conference set c_modirator_phone_no='%s' where c_phone_no='%s' ",
+            "update t_conference set c_moderator_phone_no='%s' where c_phone_no='%s' ",
             user, confPhone
         );
     executeUpdate(sql);
     
     sql = sqlstring.format(
-            "update t_conference_member set n_is_modirator = (case when c_phone_no = '%s' then 1 else 2 end)  "..
+            "update t_conference_member set n_is_moderator = (case when c_phone_no = '%s' then 1 else 2 end)  "..
             " where c_conference_phone_no='%s'",
             user, confPhone
         );
@@ -158,18 +158,18 @@ end;
 function setConferenceMemberIn (confPhone, user, memberId)
     local sql;
     local last_member_id;
-    local is_modirator = false
+    local is_moderator = false
 
     if nil ~= user then 
         --1, find last member_id;
         sql = sqlstring.format(
-                "select n_member_id, n_is_modirator from t_conference_member where "..
+                "select n_member_id, n_is_moderator from t_conference_member where "..
                 " c_conference_phone_no='%s' and c_phone_no='%s' ",
                 confPhone, user
             );
         local rowCount = executeQuery(sql, function(row)
             last_member_id = row['n_member_id'];
-            is_modirator = isTrue(row['n_is_modirator']);
+            is_moderator = isTrue(row['n_is_moderator']);
         end);
 
         --2, update and set new member_id
@@ -184,7 +184,7 @@ function setConferenceMemberIn (confPhone, user, memberId)
         end;
     end;
 
-    return last_member_id, is_modirator;
+    return last_member_id, is_moderator;
 end;
 
 function setConferenceMemberOut(confPhone, user, memberId)
@@ -211,7 +211,7 @@ function createConference (name, creator, creatorName)
 
 
     newSqlBuilder(" insert into t_conference  ")
-          .append(" (c_phone_no, c_modirator_phone_no, c_name, c_creator, c_creator_name," )
+          .append(" (c_phone_no, c_moderator_phone_no, c_name, c_creator, c_creator_name," )
           .append(" d_created, d_updated, d_plan, n_valid, c_profile,  n_is_running)")
           .append(" values ")
           .format(" ('%s'", phoneNo)
@@ -248,7 +248,7 @@ function getConferenceInfo(confPhone)
     buf.append(" SELECT ");
     buf.append(" conf.c_phone_no as conference,  ");
     buf.append(" conf.c_name as name,  ");
-    buf.append(" conf.c_modirator_phone_no as moderator,  ");
+    buf.append(" conf.c_moderator_phone_no as moderator,  ");
     buf.append(" conf.c_creator as creator,  ");
     buf.append(" conf.c_creator_name as creator_name,  ");
     buf.append(" conf.n_valid as valid,  ");
@@ -272,7 +272,7 @@ function getMyConferences (memberPhone, runningOnly)
     buf.append(" SELECT ");
     buf.append(" conf.c_phone_no as conference, ");
     buf.append(" conf.c_name as name, ");
-    buf.append(" conf.c_modirator_phone_no as moderator, ");
+    buf.append(" conf.c_moderator_phone_no as moderator, ");
     buf.append(" conf.c_creator as creator, ");
     buf.append(" conf.c_creator_name as creator_name, ");
     buf.append(" conf.c_profile, ");
@@ -305,11 +305,11 @@ function clearInvalidConferences()
     -- copy
     newSqlBuilder()
         .append(" INSERT INTO t_conference_old( ")
-        .append("   c_phone_no, c_modirator_phone_no, c_name,d_created,")
+        .append("   c_phone_no, c_moderator_phone_no, c_name,d_created,")
         .append("   d_plan,n_valid,d_started,c_unique_id,c_profile,c_creator,")
         .append("   c_creator_name,n_is_running,d_updated,n_updated")
         .append(" ) SELECT ")
-        .append("   c_phone_no, c_modirator_phone_no, c_name,d_created,")
+        .append("   c_phone_no, c_moderator_phone_no, c_name,d_created,")
         .append("   d_plan,n_valid,d_started,c_unique_id,c_profile,c_creator,")
         .append("   c_creator_name,n_is_running,d_updated,n_updated")
         .append(" FROM t_conference")
@@ -421,6 +421,8 @@ function newConferenceService(confPhone)
     end;
 
     service.addMember=function(member, fastInsert)
+        local user = member['user'];
+        local name = member['name'];
 
         -- check exists
         if nil == fastInsert or not fastInsert then
@@ -438,16 +440,16 @@ function newConferenceService(confPhone)
 
         -- save to DB        
         newSqlBuilder("insert into t_conference_member ")
-            .append(" ( c_conference_phone_no, c_phone_no, c_name, d_created, n_is_modirator, n_can_hear, n_can_speak) ")
+            .append(" ( c_conference_phone_no, c_phone_no, c_name, d_created, n_is_moderator, n_can_hear, n_can_speak) ")
             .append(" values ")
             .format("( '%s'", confPhone)
             .format(", '%s'", user)
             .format(", '%s'", name)
-            .format(", now()")
-            .format(", 2")
-            .format(", 1")
-            .format(", 1")
-            .format(") ")
+            .append(", now()")
+            .append(", 2")
+            .append(", 1")
+            .append(", 1")
+            .append(") ")
             .update();
 
         return true;
@@ -476,15 +478,15 @@ function newConferenceService(confPhone)
         -- if only one member, set him as moderator
         if (numSum - numDeleted == 1) then
             newSqlBuilder(" update t_conference_member ")
-              .append(" set n_is_modirator = 1")
+              .append(" set n_is_moderator = 1")
               .format(" where c_conference_phone_no = '%s' ", confPhone)
               .format(" AND 1 = (select count(*) from t_conference_member as mem where mem.c_conference_phone_no = '%s')", confPhone)
               .update();
 
             newSqlBuilder(" update t_conference ")
-              .append(" set c_modirator_phone_no = ")
+              .append(" set c_moderator_phone_no = ")
               .append(" (select c_phone_no from t_conference_member as mem ")
-              .format("  where mem.n_is_modirator = 1 and mem.c_conference_phone_no = '%s'", confPhone)
+              .format("  where mem.n_is_moderator = 1 and mem.c_conference_phone_no = '%s'", confPhone)
               .append(" )")
               .format(" where c_phone_no = '%s' ", confPhone)
               .update();
@@ -616,13 +618,13 @@ function newConferenceService(confPhone)
         
         -- update DB
         sql = sqlstring.format(
-                "update t_conference set c_modirator_phone_no='%s' where c_phone_no='%s' ",
+                "update t_conference set c_moderator_phone_no='%s' where c_phone_no='%s' ",
                 user, confPhone
             );
         executeUpdate(sql);
 
         sql = sqlstring.format(
-                "update t_conference_member set n_is_modirator = (case when c_phone_no = '%s' then 1 else 2 end) where c_conference_phone_no='%s' ",
+                "update t_conference_member set n_is_moderator = (case when c_phone_no = '%s' then 1 else 2 end) where c_conference_phone_no='%s' ",
                 user, confPhone
             );
         executeUpdate(sql);
