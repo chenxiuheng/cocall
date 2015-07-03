@@ -252,7 +252,7 @@ function getConferenceInfo(confPhone)
     buf.append(" conf.c_creator as creator,  ");
     buf.append(" conf.c_creator_name as creator_name,  ");
     buf.append(" conf.n_valid as valid,  ");
-    buf.append(" to_char(conf.d_created, 'YYYY:MM:DD HH24:MI:SS') as created, ");
+    buf.append(" to_char(conf.d_created, 'YYYY-MM-DD HH24:MI:SS') as created, ");
     buf.append(" conf.c_profile  ");
     buf.append(" FROM  ");
     buf.append("    t_conference AS conf  ");
@@ -277,7 +277,7 @@ function getMyConferences (memberPhone, runningOnly)
     buf.append(" conf.c_creator_name as creator_name, ");
     buf.append(" conf.c_profile, ");
     buf.append(" conf.n_valid as valid, ");
-    buf.append(" to_char(conf.d_created, 'YYYY:MM:DD HH24:MI:SS') as created,");
+    buf.append(" to_char(conf.d_created, 'YYYY-MM-DD HH24:MI:SS') as created,");
     buf.append(" (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no) as num_member, ");
     buf.append(" (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no and n_is_in = 1) as num_is_in ");
     buf.append(" FROM ");
@@ -324,6 +324,28 @@ function clearInvalidConferences()
         .update();
 end;
 
+
+function saveConferenceEvent(conference, event, member_id, props)
+    if nil == member_id or '' == member_id then
+        member_id = '-1';
+    end;
+
+    local buf = newSqlBuilder();
+    buf.append("insert into t_conference_event ")
+        .append("(d_created, c_conference_phone_no, c_event, n_member_id, c_user_id, c_current_energy, c_energy_level, c_old_id, c_new_id)")
+        .append(" values ( now()")
+        .format(", '%s'", conference)
+        .format(", '%s'", event)
+        .format(", %s",   member_id)
+        .format(", '%s'", props['user_id'])
+        .format(", '%s'", props['current_energy'])
+        .format(", '%s'", props['energy_level'])
+        .format(", '%s'", props['old_id'])
+        .format(", '%s'", props['new_id'])
+        .append(")")
+        .update();
+
+end;
 -----// END   Conference DAO ---------------------------------------------
 
 
