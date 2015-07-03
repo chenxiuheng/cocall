@@ -738,19 +738,8 @@ function newConferenceService(confPhone)
         return buf.toString();
     end;
 
-    service.getMemberStates = function (dstUser)
-        -- 1, get member's states
-        local members;
-        members = getConferenceMembers(confPhone);
-        
-        -- 2, build msg
-        local msg = formatAsSMS(members);
 
-        -- 3. send to the user
-        sendSMS(confPhone, dstUser, msg);
-    end;
-
-    service.dispatchMemberStates = function ()
+    service.dispatchMemberStates = function (dst)
 
         -- 1, get member's states
         local members;
@@ -759,13 +748,22 @@ function newConferenceService(confPhone)
         -- 2, build msg
         local msg = formatAsSMS(members);
 
-        dispatchSMS(members, msg);
+        if 'all' == dst then
+            dispatchSMS(members, msg);
+        else
+            batchSendSMS(confPhone, dst, msg);
+        end;
     end;
 
+    service.notify = function (dstUser)
+        local id = string.format("conference/%s/%s/member-list", confPhone, dstUser);
+        local cmd = string.format("api_dispatch_member_list %s %s", confPhone, dstUser);
+        setTimeoutIfAbsent(id, cmd, 300);
+    end;
 
     service.notifyAll = function () 
-        local id = string.format("conference/%s/member-list", confPhone);
-        local cmd = string.format("api_dispatch_member_list %s", confPhone);
+        local id = string.format("conference/%s/all/member-list", confPhone);
+        local cmd = string.format("api_dispatch_member_list %s all", confPhone);
         setTimeoutIfAbsent(id, cmd, 700);
     end;
 
