@@ -11,7 +11,7 @@ function api_send_conferences (from_user, to_user)
         buf.append(info['name']).append(';');
         buf.append(info['creator']).append(';');
         buf.append(info['creator_name']).append(';');
-        buf.append(info['age']).append(';');
+        buf.append(info['created']).append(';');
         buf.append(info['num_is_in']).append('/').append(info['num_member']).append(';');
     end;
     buf.append('\n');

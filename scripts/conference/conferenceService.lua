@@ -252,7 +252,7 @@ function getConferenceInfo(confPhone)
     buf.append(" conf.c_creator as creator,  ");
     buf.append(" conf.c_creator_name as creator_name,  ");
     buf.append(" conf.n_valid as valid,  ");
-    buf.append(" (extract(epoch from now()) - extract(epoch from d_created)) as age, ");
+    buf.append(" to_char(conf.d_created, 'YYYY:MM:DD HH24:MI:SS') as created, ");
     buf.append(" conf.c_profile  ");
     buf.append(" FROM  ");
     buf.append("    t_conference AS conf  ");
@@ -277,7 +277,7 @@ function getMyConferences (memberPhone, runningOnly)
     buf.append(" conf.c_creator_name as creator_name, ");
     buf.append(" conf.c_profile, ");
     buf.append(" conf.n_valid as valid, ");
-    buf.append("  ceil(extract(epoch from now()) - extract(epoch from d_created)) as age,");
+    buf.append(" to_char(conf.d_created, 'YYYY:MM:DD HH24:MI:SS') as created,");
     buf.append(" (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no) as num_member, ");
     buf.append(" (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no and n_is_in = 1) as num_is_in ");
     buf.append(" FROM ");
@@ -777,7 +777,7 @@ end;
 function formatConference(info)
     if nil == info then return ''; end;
     
-    return string.format('%s;%s;%s;%s;', info['name'], info['creator'], info['creator_name'], info['age']);
+    return string.format('%s;%s;%s;%s;', info['name'], info['creator'], info['creator_name'], info['created']);
 
 end;
 
