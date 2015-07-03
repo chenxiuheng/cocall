@@ -16,7 +16,7 @@ local conf = getConferenceInfo(conf_num);
 if nil ~= conf and '1' == conf['valid'] then
     local service = newConferenceService(conf_num);
     local members = service.getMembers(caller_id);
-    service.getMemberStates(caller_id);
+    service.notify(caller_id);
 
     for i, member in ipairs(members)  do
         --  wait user audio+video send to FS
