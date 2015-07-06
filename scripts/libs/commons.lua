@@ -117,12 +117,15 @@ function batchSendSMS(from_user, toUsers, ...)
     end;
     buf.append(')');
     sql = buf.toString();
-    logger.info(sql);
 
     -- interrupted if no receivers
-    if not hasReceivers then return false; end;
+    if not hasReceivers then 
+        logger.info(from_user, 'send to nobody online, ', msg);
+        return false; 
+    end;
 
     -- send it
+    logger.info(sql);
     local hasSentIt = false;
     local from_proto = 'sip';
     local to_proto = 'sip';

@@ -26,9 +26,10 @@ A.api_send_conferences = function (from_user, to_user)
     execute(cmd.toString());
 end;
 
-A.api_dispatch_member_list = function (confPhone)
+A.api_dispatch_member_list = function (confPhone, dst)
     local cmd = newStringBuilder("task/api_dispatch_member_list.lua");
     cmd.append(" ").append(confPhone);
+    cmd.append(" ").append(dst);
 
     execute(cmd.toString());
 end;

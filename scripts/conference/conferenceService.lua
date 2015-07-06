@@ -751,7 +751,7 @@ function newConferenceService(confPhone)
         if 'all' == dst then
             dispatchSMS(members, msg);
         else
-            batchSendSMS(confPhone, dst, msg);
+            sendSMS(confPhone, dst, msg);
         end;
     end;
 
