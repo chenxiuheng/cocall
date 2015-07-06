@@ -116,11 +116,11 @@ end;
 
 function getExecuteTasks()
     local buf = newSqlBuilder();
-    buf.append(" select id, c_api as cmd, -1 as timeout, 'timeout' as type, ");
+    buf.append(" select id, d_created as created, c_api as cmd, '-1' as timeout, 'timeout' as type, ");
     buf.append(" c_args_1, c_args_2, c_args_3, c_args_4 ");
     buf.append(" from t_task_timeout where n_executed = 2 and d_execute <= now() ");
     buf.append("union all");
-    buf.append(" select id, c_api as cmd, n_timeout as timeout, 'interval' as type, ");
+    buf.append(" select id, d_created as created, c_api as cmd, n_timeout as timeout, 'interval' as type, ");
     buf.append(" c_args_1, c_args_2, c_args_3, c_args_4 ");
     buf.append(" from t_task_interval where d_execute <= now() ");
 

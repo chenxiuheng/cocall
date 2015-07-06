@@ -18,7 +18,7 @@ function execute(cmd)
 end;
 
 local A = {};
-A.api_send_conferences = function (from_user, to_user)
+A.api_send_conferences = function (created, from_user, to_user)
     local cmd = newStringBuilder("task/api_send_conferences.lua");
     cmd.append(" ").append(from_user);
     cmd.append(" ").append(to_user);
@@ -26,7 +26,7 @@ A.api_send_conferences = function (from_user, to_user)
     execute(cmd.toString());
 end;
 
-A.api_dispatch_member_list = function (confPhone, dst)
+A.api_dispatch_member_list = function (created, confPhone, dst)
     local cmd = newStringBuilder("task/api_dispatch_member_list.lua");
     cmd.append(" ").append(confPhone);
     cmd.append(" ").append(dst);
@@ -34,22 +34,23 @@ A.api_dispatch_member_list = function (confPhone, dst)
     execute(cmd.toString());
 end;
 
-A.api_dispatch_member_energy = function (confPhone)
-    local cmd = newStringBuilder("task/api_dispatch_member_energy.lua");
+A.member_updated = function (created, confPhone, timeStart)
+    local cmd = newStringBuilder("task/api_dispatch_member_updated.lua");
     cmd.append(" ").append(confPhone);
+    cmd.append(" ").append(created);
 
     execute(cmd.toString());
 end;
 
-A.api_clear_registrationExt = function()
+A.api_clear_registrationExt = function(created)
     freeswitch.API():execute('lua', "task/api_clear_registrationExt.lua"); -- must synch
 end;
 
-A.api_clear_executed_timeout = function()
+A.api_clear_executed_timeout = function(created)
     freeswitch.API():execute('lua', "task/api_clear_executed_timeout.lua"); -- must synch
 end;
 
-A.api_clear_invalid_conferences = function()
+A.api_clear_invalid_conferences = function(created)
     freeswitch.API():execute('lua', "task/api_clear_invalid_conferences.lua"); -- must synch
 end;
 -- // end
@@ -61,6 +62,7 @@ local func;
 for index, task in pairs(tasks) do
     local id        = task['id'];
     local cmd       = task['cmd'];
+    local created   = task['created'];
     local timeout   = task['timeout'];
     local task_type = task['type'];
     local args      = task['args'];

@@ -100,6 +100,7 @@ function batchSendSMS(from_user, toUsers, ...)
         end;
     end;
     msg = buf.toString();
+    logger.info("from ", from_user, ': ', msg);
 
     -- select regist info 
     local sql;
@@ -120,7 +121,7 @@ function batchSendSMS(from_user, toUsers, ...)
 
     -- interrupted if no receivers
     if not hasReceivers then 
-        logger.info(from_user, 'send to nobody online, ', msg);
+        logger.info('nobody online');
         return false; 
     end;
 
@@ -164,10 +165,10 @@ function batchSendSMS(from_user, toUsers, ...)
         event:chat_execute("send");
         hasSentIt = true;
 
-        logger.debug(from_full, '-->', to, '\n', msg);
+        logger.info(from_full, '-->', to);
     end);
 
-    logger.info('user[', from_user, '] finish send ', msg);
+    logger.info('user[', from_user, '] finish send ');
 
     return hasSentIt;
 end;
