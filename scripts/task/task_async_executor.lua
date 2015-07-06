@@ -42,6 +42,15 @@ A.member_updated = function (created, confPhone, timeStart)
     execute(cmd.toString());
 end;
 
+A.memberlist_updated = function(created, confPhone, userId, func)
+    local cmd = newStringBuilder("task/api_dispatch_memberlist_updated.lua");
+    cmd.append(" ").append(confPhone);
+    cmd.append(" ").append(userId);
+    cmd.append(" ").append(func);
+
+    execute(cmd.toString());
+end;
+
 A.api_clear_registrationExt = function(created)
     -- freeswitch.API():execute('lua', "task/api_clear_registrationExt.lua"); -- must synch
 end;

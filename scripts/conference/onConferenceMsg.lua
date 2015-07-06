@@ -31,28 +31,39 @@ if nil ~= confPhone and nil ~=  from_user then
                 success = service.addMember(member);
 
                 sendSMS(confPhone, user, "conference-join", service.toSimpleString());
+
+                if success then
+                    local id =  string.format("memberlist_updated %s %s", confPhone, user);
+                    local cmd = string.format("memberlist_updated %s %s add", confPhone, user);
+                    setTimeout(id, cmd, 700);
+                end;
             else
                 logger.warn('Fail Add User(', user, name, ')');
             end;
         end
-
-        service.notifyAll();
-    elseif action == 'conference_destroy' then
-        service.sayTo("all", from_user, 'conference-kicked');
-        service.destroy();
     elseif action == 'conference_leave' then
         service.removeMember(from_user);
         sendSMS(confPhone, user, "conference-left", service.toSimpleString());
-        service.notifyAll();
+
+        local id =  string.format("memberlist_updated %s %s", confPhone, user);
+        local cmd = string.format("memberlist_updated %s %s removed", confPhone, user);
+        setTimeout(id, cmd, 700);
+
     elseif action == 'conference_kick' then
         for user in string.gmatch(params..'\n', "([^\n]*)\n") do
             if '' ~= user then
                 service.removeMember(user);
                 sendSMS(confPhone, user, "conference-kicked", service.toSimpleString());
+
+                local id =  string.format("memberlist_updated %s %s", confPhone, user);
+                local cmd = string.format("memberlist_updated %s %s removed", confPhone, user);
+                setTimeout(id, cmd, 700);
             end;
         end;
+    elseif action == 'conference_destroy' then
+        service.sayTo("all", from_user, 'conference-kicked');
+        service.destroy();
 
-        service.notifyAll();
     elseif action == 'conference_mute'  then
         for user in string.gmatch(params, "([^\n]*)\n") do
             if nil ~= user and '' ~= user then

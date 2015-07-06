@@ -57,7 +57,7 @@ function getConferenceUpdatedMembers (confPhone, timeStart)
     return members;  
 end;
 
-function getConferenceMembersIsIn (confPhone, timeStart)
+function getConferenceMembersIsIn (confPhone)
     local buf = newSqlBuilder();
    
     buf.append(" SELECT DISTINCT ");
