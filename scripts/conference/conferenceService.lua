@@ -566,12 +566,7 @@ function newConferenceService(confPhone)
         local non_moderator = false;
 
         local members;
-        if user == 'non_moderator' then
-            members = getConferenceMembers(confPhone);
-            non_moderator = true;
-        else 
-            members = getConferenceMembers(confPhone, user);
-        end;
+        members = getConferenceMembers(confPhone, user);
 
         -- update DB state
         updateConferenceMemberFields(confPhone, user, 'n_can_speak', '2');
@@ -599,12 +594,7 @@ function newConferenceService(confPhone)
         local non_moderator = false;
 
         local members;
-        if user == 'non_moderator' then
-            members = getConferenceMembers(confPhone);
-            non_moderator = true;
-        else 
-            members = getConferenceMembers(confPhone, user);
-        end;
+        members = getConferenceMembers(confPhone, user);
 
         -- update DB state
         updateConferenceMemberFields(confPhone, user, 'n_can_speak', '1');
