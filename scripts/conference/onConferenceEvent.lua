@@ -121,10 +121,7 @@ elseif action == 'start-talking' then
     end;
     updateConferenceMemberEnergy(confPhone, user, energy, level);
 
-    -- // dispatch member energy after 500ms
-    local task_id = string.format("conference/%s/energy", confPhone);
-    local cmd = "api_dispatch_member_energy "..confPhone;
-    setTimeoutIfAbsent(task_id, cmd, 300);
+    service.notifyAll();
 elseif action == 'stop-talking' then
     energy = '0';
     if ('0' == level or 0 == leven) then
@@ -132,10 +129,7 @@ elseif action == 'stop-talking' then
     end;
     updateConferenceMemberEnergy(confPhone, user, energy, level);
 
-    -- // dispatch member energy after 500ms
-    local task_id = string.format("conference/%s/energy", confPhone);
-    local cmd = "api_dispatch_member_energy "..confPhone;
-    setTimeoutIfAbsent(task_id, cmd, 300);
+    service.notifyAll();
 end;
 
 

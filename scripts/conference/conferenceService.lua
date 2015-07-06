@@ -242,6 +242,7 @@ function setConferenceMemberOut(confPhone, user, memberId)
 end;
 
 
+
 -- created conference    
 function createConference (name, creator, creatorName)
     local phoneNo = nil;
@@ -726,7 +727,7 @@ function newConferenceService(confPhone)
 
     service.notifyAll = function () 
         local cmd = string.format("member_updated %s", confPhone);
-        setTimeoutIfAbsent(nil, cmd, 700);
+        setTimeoutIfAbsent(nil, cmd, 500);
     end;
 
     service.toSimpleString = function() 

@@ -1,5 +1,22 @@
 require('conference.conferenceService');
 
+local oct_to_hex = {}
+    oct_to_hex[0] = '0';
+    oct_to_hex[1] = '1';
+    oct_to_hex[2] = '2';
+    oct_to_hex[3] = '3';
+    oct_to_hex[4] = '4';
+    oct_to_hex[5] = '5';
+    oct_to_hex[6] = '6';
+    oct_to_hex[7] = '7';
+    oct_to_hex[8] = '8';
+    oct_to_hex[9] = '9';
+    oct_to_hex[10] = 'A';
+    oct_to_hex[11] = 'B';
+    oct_to_hex[12] = 'C';
+    oct_to_hex[13] = 'D';
+    oct_to_hex[14] = 'E';
+    oct_to_hex[15] = 'F';
 
 function asMessage(members)
     local buf = newStringBuilder('conference-members-updated\n');

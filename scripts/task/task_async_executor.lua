@@ -43,7 +43,7 @@ A.member_updated = function (created, confPhone, timeStart)
 end;
 
 A.api_clear_registrationExt = function(created)
-    freeswitch.API():execute('lua', "task/api_clear_registrationExt.lua"); -- must synch
+    -- freeswitch.API():execute('lua', "task/api_clear_registrationExt.lua"); -- must synch
 end;
 
 A.api_clear_executed_timeout = function(created)
@@ -77,7 +77,7 @@ for index, task in pairs(tasks) do
     -- invoke
     func = A[cmd];
     if (nil ~= func) then
-        func(args[1], args[2], args[3], args[4]);
+        func(created, args[1], args[2], args[3], args[4]);
     else
         logger.error('unknown cmd ', cmd);
     end;
