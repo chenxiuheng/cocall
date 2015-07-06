@@ -31,16 +31,12 @@ if nil ~= confPhone and nil ~=  from_user then
                 success = service.addMember(member);
 
                 sendSMS(confPhone, user, "conference-join", service.toSimpleString());
-
-                if success then
-                    local id =  string.format("memberlist_updated %s %s", confPhone, user);
-                    local cmd = string.format("memberlist_updated %s %s add", confPhone, user);
-                    setTimeout(id, cmd, 700);
-                end;
             else
                 logger.warn('Fail Add User(', user, name, ')');
             end;
         end
+
+        service.notifyAll();
     elseif action == 'conference_leave' then
         service.removeMember(from_user);
         sendSMS(confPhone, user, "conference-left", service.toSimpleString());

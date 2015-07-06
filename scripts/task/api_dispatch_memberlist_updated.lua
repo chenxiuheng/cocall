@@ -15,8 +15,9 @@ function add (confPhone, userId)
         table.insert(to_users, member['user']);
     end;
 
+    local name = selected[0]['name'];
     local buf = newStringBuilder('conference_member_add\n');
-    buf.append(userId).append("\n");
+    buf.append(userId).append(";").append(name).append("\n");
     batchSendSMS(confPhone, to_users, buf.toString());
 end;
 
@@ -34,7 +35,7 @@ function removed (confPhone, userId)
     end;
 
     local buf = newStringBuilder('conference_member_removed\n');
-    buf.append(userId).append("\n");
+    buf.append(userId).append(";").append("\n");
     batchSendSMS(confPhone, to_users, buf.toString());
 end;
 
@@ -43,5 +44,11 @@ local confPhone = argv[1];
 local userId = argv[2];
 local func = argv[3];
 if nil ~= confPhone and nil ~= userId then
-    func(confPhone, userId);
+    if func == 'add' then
+      add(confPhone, userId);
+    elseif func =='removed' then
+      removed(confPhone, userId);
+    else
+      getLogger().warn("illegal args ", confPhone, userId, func);
+    end;
 end;
