@@ -41,7 +41,7 @@ end;
 
 if not foundIt then
     
-    sendSMS(conf_num, caller_id, 'conference_forbidden', string.format("caller[%s] not belong conference[%s]", caller_id, conf_num));
+    sendSMS(conf_num, caller_id, 'conference-forbidden', string.format("caller[%s] not belong conference[%s]", caller_id, conf_num));
     session:hangup();
 end;
 

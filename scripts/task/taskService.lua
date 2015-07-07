@@ -3,7 +3,7 @@ require('libs.db');
 
 function setTimeout(id, cmd, millisec)
     local sql;
-    if nil == id then id = 'auto_'..cmd; end;
+    if nil == id then id = cmd; end;
 
     -- split cmd, read api name and params
     local segs = string.split(cmd.." ", '(%s+)');
@@ -52,7 +52,7 @@ end;
 
 function setTimeoutIfAbsent(id, cmd, millisec)
     local sql;
-    if nil == id then id = 'auto_'..cmd; end;
+    if nil == id then id = cmd; end;
 
     -- split cmd, read api name and params
     local segs = string.split(cmd.." ", '(%s+)');

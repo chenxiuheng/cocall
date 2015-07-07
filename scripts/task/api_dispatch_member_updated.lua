@@ -56,6 +56,10 @@ end;
 
 function api_dispatch_member_updated (confPhone, timestart)
     local updatedMembers = getConferenceUpdatedMembers(confPhone, timestart);
+    if #updatedMembers < 1 then
+        return;
+    end;
+
     local msg = asMessage(updatedMembers);
 
     local members;

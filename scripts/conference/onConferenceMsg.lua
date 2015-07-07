@@ -24,7 +24,7 @@ if nil ~= confPhone and nil ~=  from_user then
     if action == 'conference_add_member' then
         local success = true;
         local member = {};
-        for user, name in string.gmatch(params..'\n', "([^;]*);([^\n]*)\n") do
+        for user, name in string.gmatch(params..'\n', "([^;\n]*)[;]?([^\n]*)\n") do
             if user ~= '' then
                 member['user'] = user;
                 member['name'] = name;
@@ -41,8 +41,8 @@ if nil ~= confPhone and nil ~=  from_user then
         service.removeMember(from_user);
         sendSMS(confPhone, user, "conference-left", service.toSimpleString());
 
-        local id =  string.format("member_removed %s %s", confPhone, user);
-        local cmd = string.format("member_removed %s %s removed", confPhone, user);
+        local id =  string.format("member_removed %s %s", confPhone, from_user);
+        local cmd = string.format("member_removed %s %s removed", confPhone, from_user);
         setTimeout(id, cmd, 700);
 
     elseif action == 'conference_kick' then

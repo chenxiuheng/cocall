@@ -50,7 +50,7 @@ if nil ~= i then
 
         local fastInsert = true;
         local rowIndex = 1;
-        for v2, v3 in string.gmatch(params, "([^;]*)[;]?([^\n]*)\n") do
+        for v2, v3 in string.gmatch(params, "([^;\n]*)[;]?([^\n]*)\n") do
 
             if 1 == rowIndex then 
                 local conf_name = v2;

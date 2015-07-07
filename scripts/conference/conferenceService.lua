@@ -280,13 +280,13 @@ function createConference (name, creator, creatorName)
 
     newSqlBuilder(" insert into t_conference  ")
           .append(" (c_phone_no,  c_name, c_creator, c_creator_name," )
-          .append(" d_created, d_updated, n_valid, c_profile,  n_is_running)")
+          .append(" d_created,  n_valid, c_profile,  n_is_running)")
           .append(" values ")
           .format(" ('%s'", phoneNo)
           .format(" ,'%s'", name)
           .format(" ,'%s'", creator)
           .format(" ,'%s'", creatorName)
-          .append(" ,now(),  now(), 1, 'default', 2")
+          .append(" ,now(),  1, 'default', 2")
           .append(" )")
           .update();
 
@@ -527,7 +527,7 @@ function newConferenceService(confPhone)
 
         -- save to DB        
         newSqlBuilder("insert into t_conference_member ")
-            .append(" ( c_conference_phone_no, c_phone_no, c_name, d_created, n_is_moderator, n_can_hear, n_can_speak) ")
+            .append(" ( c_conference_phone_no, c_phone_no, c_name, d_created, n_is_moderator, n_can_hear, n_can_speak, n_updated, d_update) ")
             .append(" values ")
             .format("( '%s'", confPhone)
             .format(", '%s'", user)
@@ -536,6 +536,8 @@ function newConferenceService(confPhone)
             .append(", 2")
             .append(", 1")
             .append(", 1")
+            .append(", 1")
+            .append(", now()")
             .append(") ")
             .update();
 
@@ -665,7 +667,7 @@ function newConferenceService(confPhone)
                 local is_in = member['is_in'];
                 local member_id = member['member_id'];
                 
-                if isTrue(is_in) then
+                if isTrue(is_in) and nil ~= member_id then
                     freeswitch.API():execute('conference', service.getPhoneNo()..' vid-floor '..member_id ..' force');
                     logger.warn("moderator is NOT in conference, user[", user , "] has been setted vid-floor force & return;");
                     return true;
@@ -679,20 +681,11 @@ function newConferenceService(confPhone)
     end;
 
     service.setModerator = function(user)
-        local sql;
-        
-        -- update DB
-        sql = sqlstring.format(
-                "update t_conference set c_moderator_phone_no='%s' where c_phone_no='%s' ",
-                user, confPhone
-            );
-        executeUpdate(sql);
+        -- remove moderator
+        updateConferenceMemberFields(confPhone, 'moderator', 'n_is_moderator', 2);
 
-        sql = sqlstring.format(
-                "update t_conference_member set n_is_moderator = (case when c_phone_no = '%s' then 1 else 2 end) where c_conference_phone_no='%s' ",
-                user, confPhone
-            );
-        executeUpdate(sql);
+        -- set new mmoderator
+        updateConferenceMemberFields(confPhone, user, 'n_is_moderator', 1);
 
 
         -- change switch
@@ -701,8 +694,10 @@ function newConferenceService(confPhone)
             local is_in = member['is_in'];
             local member_id = member['member_id'];
 
-            freeswitch.API():execute('conference', service.getPhoneNo()..' vid-floor '..member_id ..' force');
-            logger.warn('conference', service.getPhoneNo(), "set member", member_id , " vid-floor");
+            if isTrue(is_in) and nil ~= member_id then
+                freeswitch.API():execute('conference', service.getPhoneNo()..' vid-floor '..member_id ..' force');
+                logger.warn('conference', service.getPhoneNo(), "set member", member_id , " vid-floor");
+            end;
         end;
 
         releaseInfo();

@@ -189,6 +189,7 @@ function sendSMS(from_user, to_user, ...)
         end;
     end;
     msg = buf.toString();
+    logger.info("from ", from_user, '>>>>\n', msg);
 
     -- select regist info 
     local sql;
@@ -237,10 +238,12 @@ function sendSMS(from_user, to_user, ...)
         event:chat_execute("send");
         hasSentIt = true;
 
-        logger.debug(from_full, '-->', to, '\n', msg);
+        logger.info(from_full, '-->', to, "finish send");
     end);
 
-    logger.info('user[', from_user, '] finish send ', msg);
+    if not hasSentIt then
+        logger.info(to, "is not online");
+    end;
 
     return hasSentIt;
 end;
