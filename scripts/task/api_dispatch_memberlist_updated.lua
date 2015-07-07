@@ -16,7 +16,7 @@ function add (confPhone, userId)
     end;
 
     local name = selected[0]['name'];
-    local buf = newStringBuilder('conference_member_add\n');
+    local buf = newStringBuilder('conference-member-add\n');
     buf.append(userId).append(";").append(name).append("\n");
     batchSendSMS(confPhone, to_users, buf.toString());
 end;
@@ -34,8 +34,8 @@ function removed (confPhone, userId)
         table.insert(to_users, member['user']);
     end;
 
-    local buf = newStringBuilder('conference_member_removed\n');
-    buf.append(userId).append(";").append("\n");
+    local buf = newStringBuilder('conference-member-removed\n');
+    buf.append(userId).append("\n");
     batchSendSMS(confPhone, to_users, buf.toString());
 end;
 

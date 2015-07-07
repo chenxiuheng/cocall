@@ -68,6 +68,9 @@ function api_dispatch_member_udated (confPhone, timestart)
     end;
 
     batchSendSMS(confPhone, to_users, msg);
+
+
+    clearConferenceUpdatedMembers(confPhone, updatedMembers);
 end;
 
 --  execute if has argv

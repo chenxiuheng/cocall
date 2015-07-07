@@ -41,7 +41,10 @@ function getConferenceUpdatedMembers (confPhone, timeStart)
     buf.append(" FROM ");
     buf.append(" t_conference_member AS mem ");
     buf.format(" where mem.c_conference_phone_no = '%s' ", confPhone);
-    buf.format("   and mem.d_updated >= '%s'", timeStart);
+    buf.append("   and (");
+    buf.format("         mem.d_update > '%s'::timestamp - interval '3000 millisecond'", timeStart);
+    buf.append("        or mem.n_updated = 1");
+    buf.append("       )");
 
     local members = {};
     executeQuery(buf.toString(), function(row)
@@ -55,6 +58,22 @@ function getConferenceUpdatedMembers (confPhone, timeStart)
     end);
 
     return members;  
+end;
+function clearConferenceUpdatedMembers(confPhone, members)
+    if (#members) < 1 then
+        return; -- no value to update
+    end;
+
+    local buf = newSqlBuilder("update t_conference_member set n_updated=2");
+    buf.format(" where c_conference_phone_no = '%s'", confPhone);
+    buf.append(" and mem.c_phone_no in (");
+    for i, member in ipairs(members) do
+        if (i ~= 1) then
+            buf.append(",");
+        end;
+        buf.append("'%s'", member['user']);
+    end;
+    buf.append(" )");
 end;
 
 function getConferenceMembersIsIn (confPhone)
@@ -153,7 +172,7 @@ function updateConferenceMemberFields(confPhone, user, field, value)
         buf.append(" set ").append(field).format("=%s", value);
     end;
 
-    buf.append(", d_updated = now() ");
+    buf.append(", d_update = now(), n_updated=1 ");
     buf.format(" where c_conference_phone_no = '%s' ", confPhone);
 
     if 'non_moderator' == user then
@@ -177,7 +196,7 @@ function updateConferenceMemberEnergy(confPhone, user, energy, energy_level)
 
     local sql;
     sql = sqlstring.format(
-            "update t_conference_member set n_is_in = 1, d_updated = now(), n_cur_engery = %s, n_engery_level = %s "..
+            "update t_conference_member set n_is_in = 1, d_update = now(), n_updated=1, n_cur_engery = %s, n_engery_level = %s "..
             " where c_conference_phone_no = '%s' and c_phone_no = '%s'",
             energy, energy_level, confPhone, user
         );
@@ -221,7 +240,7 @@ function setConferenceMemberIn (confPhone, user, memberId)
         --2, update and set new member_id
         if (rowCount > 0) then
             sql = sqlstring.format(
-                    "update t_conference_member set n_is_in=1, n_member_id=%s, d_updated = now() "..
+                    "update t_conference_member set n_is_in=1, n_member_id=%s, d_update = now(), n_updated=1 "..
                     " where c_conference_phone_no = '%s' and c_phone_no='%s' ",
                     memberId, confPhone, user
                 ); 
@@ -234,7 +253,7 @@ function setConferenceMemberIn (confPhone, user, memberId)
 end;
 
 function setConferenceMemberOut(confPhone, user, memberId)
-    newSqlBuilder(" update t_conference_member set n_is_in=2, n_has_video=2, d_updated = now(), n_member_id = null ")
+    newSqlBuilder(" update t_conference_member set n_is_in=2, n_has_video=2, d_update = now(), n_updated=1, n_member_id = null ")
           .append(" where c_conference_phone_no='%s'", confPhone)
           .append(" and c_phone_no='%s'", user)
           .append(" and n_member_id=%s", memberId)
