@@ -34,10 +34,10 @@ A.api_dispatch_member_list = function (created, confPhone, dst)
     execute(cmd.toString());
 end;
 
-A.member_updated = function (created, confPhone, timeStart)
+A.member_updated = function (created, confPhone)
     local cmd = newStringBuilder("task/api_dispatch_member_updated.lua");
     cmd.append(" ").append(confPhone);
-    cmd.append(" ").append(created);
+    cmd.append(" '").append(created).append("'");
 
     execute(cmd.toString());
 end;

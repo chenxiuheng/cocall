@@ -48,21 +48,22 @@ function getLogger(prefix)
         if nil ~= prefix then
             table.insert(msgs, '[');
             table.insert(msgs, prefix);
-            table.insert(msgs, ']');
+            table.insert(msgs, ']-');
         end;
         
         for i, arg in ipairs(args) do
             if type(arg) == 'string' or type(arg) == 'number' then
                 table.insert(msgs, arg);
+                table.insert(msgs, ' ');
             elseif nil == arg then
-                -- do nothing
+                table.insert(msgs, 'nil ');
             else
               freeswitch.consoleLog('ERROR', "unsupported "..type(arg));
             end;
         end;
         
         table.insert(msgs, '\n');
-        freeswitch.consoleLog(level, table.concat(msgs, ' '));
+        freeswitch.consoleLog(level, table.concat(msgs, ''));
     end;
 
     log.debug = function(...)
@@ -100,7 +101,7 @@ function batchSendSMS(from_user, toUsers, ...)
         end;
     end;
     msg = buf.toString();
-    logger.info("from ", from_user, ': ', msg);
+    logger.info("from ", from_user, '>>>>\n', msg);
 
     -- select regist info 
     local sql;

@@ -66,7 +66,7 @@ function clearConferenceUpdatedMembers(confPhone, members)
 
     local buf = newSqlBuilder("update t_conference_member set n_updated=2");
     buf.format(" where c_conference_phone_no = '%s'", confPhone);
-    buf.append(" and mem.c_phone_no in (");
+    buf.append(" and c_phone_no in (");
     for i, member in ipairs(members) do
         if (i ~= 1) then
             buf.append(",");
@@ -74,6 +74,8 @@ function clearConferenceUpdatedMembers(confPhone, members)
         buf.append("'%s'", member['user']);
     end;
     buf.append(" )");
+
+    buf.update();
 end;
 
 function getConferenceMembersIsIn (confPhone)
