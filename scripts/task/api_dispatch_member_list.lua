@@ -85,7 +85,7 @@ function api_dispatch_member_list (confPhone, dstUsr)
             -- is_moderator
             if isTrue(is_moderator) then flags = flags + 1;end;
           
-            buf.append(user).append(';').append(name).append(';').append(oct_to_hex[flags]).append(';');
+            buf.append(user).append(';').append(oct_to_hex[flags]).append(';');
             buf.append('\n');
 
             index = index + 1;

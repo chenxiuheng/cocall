@@ -41,8 +41,8 @@ if nil ~= confPhone and nil ~=  from_user then
         service.removeMember(from_user);
         sendSMS(confPhone, user, "conference-left", service.toSimpleString());
 
-        local id =  string.format("memberlist_updated %s %s", confPhone, user);
-        local cmd = string.format("memberlist_updated %s %s removed", confPhone, user);
+        local id =  string.format("member_removed %s %s", confPhone, user);
+        local cmd = string.format("member_removed %s %s removed", confPhone, user);
         setTimeout(id, cmd, 700);
 
     elseif action == 'conference_kick' then
@@ -51,8 +51,8 @@ if nil ~= confPhone and nil ~=  from_user then
                 service.removeMember(user);
                 sendSMS(confPhone, user, "conference-kicked", service.toSimpleString());
 
-                local id =  string.format("memberlist_updated %s %s", confPhone, user);
-                local cmd = string.format("memberlist_updated %s %s removed", confPhone, user);
+                local id =  string.format("member_removed %s %s", confPhone, user);
+                local cmd = string.format("member_removed %s %s removed", confPhone, user);
                 setTimeout(id, cmd, 700);
             end;
         end;

@@ -42,8 +42,8 @@ A.member_updated = function (created, confPhone, timeStart)
     execute(cmd.toString());
 end;
 
-A.memberlist_updated = function(created, confPhone, userId, func)
-    local cmd = newStringBuilder("task/api_dispatch_memberlist_updated.lua");
+A.member_removed = function(created, confPhone, userId, func)
+    local cmd = newStringBuilder("task/api_dispatch_member_removed.lua");
     cmd.append(" ").append(confPhone);
     cmd.append(" ").append(userId);
     cmd.append(" ").append(func);

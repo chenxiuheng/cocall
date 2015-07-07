@@ -54,7 +54,7 @@ function asMessage(members)
     return buf.toString();
 end;
 
-function api_dispatch_member_udated (confPhone, timestart)
+function api_dispatch_member_updated (confPhone, timestart)
     local updatedMembers = getConferenceUpdatedMembers(confPhone, timestart);
     local msg = asMessage(updatedMembers);
 
@@ -77,5 +77,5 @@ end;
 local confPhone = argv[1];
 local timestart = argv[2];
 if nil ~= confPhone and nil ~= timestart then
-    api_dispatch_member_udated (confPhone, timestart);
+    api_dispatch_member_updated (confPhone, timestart);
 end;
