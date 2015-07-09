@@ -19,7 +19,7 @@ setInterval('clear_timeout', 'api_clear_executed_timeout', 5 * 60 * 1000);
 setInterval('clear_conferences', 'api_clear_invalid_conferences', 5 * 60 * 1000);
 
 local last_clock = now();
-local clock_rate = 97;
+local clock_rate = 25;
 local cur_clock = last_clock;
 while nil ~= cur_clock  do
     cur_clock = now();

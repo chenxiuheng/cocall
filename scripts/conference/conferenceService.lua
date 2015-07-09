@@ -372,11 +372,11 @@ function clearInvalidConferences()
         .append(" INSERT INTO t_conference_old( ")
         .append("   c_phone_no, c_name,d_created,")
         .append("   n_valid,d_started,c_profile,c_creator,")
-        .append("   c_creator_name,n_is_running,d_updated,n_updated")
+        .append("   c_creator_name")
         .append(" ) SELECT ")
         .append("   c_phone_no, c_name,d_created,")
         .append("   n_valid,d_started,c_profile,c_creator,")
-        .append("   c_creator_name,n_is_running,d_updated,n_updated")
+        .append("   c_creator_name")
         .append(" FROM t_conference")
         .append(" WHERE n_valid = 2")
         .update();
@@ -728,7 +728,7 @@ function newConferenceService(confPhone)
     service.readMemberList = function (dstUser)
         local id = string.format("conference/%s/%s/member-list", confPhone, dstUser);
         local cmd = string.format("api_dispatch_member_list %s %s", confPhone, dstUser);
-        setTimeoutIfAbsent(id, cmd, 300);
+        setTimeoutIfAbsent(id, cmd, 200);
     end;
 
     service.notifyAll = function () 

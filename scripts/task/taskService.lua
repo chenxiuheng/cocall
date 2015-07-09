@@ -117,15 +117,23 @@ end;
 function getExecuteTasks()
     local buf = newSqlBuilder(); -- to_char(conf.d_created, 'YYYY-MM-DD HH24:MI:SS')
 
+    buf.append("(");
     buf.append(" select id, c_api as cmd, '-1' as timeout, 'timeout' as type, ");
     buf.append(" c_args_1, c_args_2, c_args_3, c_args_4, ");
     buf.append(" to_char(d_created, 'YYYY-MM-DD HH24:MI:SS') as created");
     buf.append(" from t_task_timeout where n_executed = 2 and d_execute <= now() ");
+    buf.append(")");
+
     buf.append("union all");
+
+    buf.append("(");
     buf.append(" select id, c_api as cmd, n_timeout as timeout, 'interval' as type, ");
     buf.append(" c_args_1, c_args_2, c_args_3, c_args_4, ");
     buf.append(" to_char(d_created, 'YYYY-MM-DD HH24:MI:SS') as created");
     buf.append(" from t_task_interval where d_execute <= now() ");
+    buf.append(")");
+
+    buf.append(" order by created asc");
 
     local tasks = {};
     buf.query(function(row)
