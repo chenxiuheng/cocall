@@ -26,7 +26,7 @@
   </domains>
 
   <settings>
-
+        <param name="odbc-dsn" value="odbc://freeswitch::"/>
 
     <!-- inject delay between dtmf digits on send to help some slow interpreters (also per channel with rtp_digit_delay var -->
     <!-- <param name="rtp-digit-delay" value="40"/>-->
@@ -58,8 +58,6 @@
 
     <!-- Don't be picky about negotiated DTMF just always offer 2833 and accept both 2833 and INFO -->
     <!--<param name="liberal-dtmf" value="true"/>-->
-
-	<param name="core-dsn" value="odbc://freeswitch::" /> 
 
     <!--
         Sometimes, in extremely rare edge cases, the Sofia SIP stack may stop
@@ -95,9 +93,9 @@
     <param name="outbound-codec-prefs" value="$${global_codec_prefs}"/>
     <param name="rtp-timer-name" value="soft"/>
     <!-- ip address to use for rtp, DO NOT USE HOSTNAMES ONLY IP ADDRESSES -->
-    <param name="rtp-ip" value="$${internal_ip_v4}"/>
+    <param name="rtp-ip" value="$${local_ip_v4}"/>
     <!-- ip address to bind to, DO NOT USE HOSTNAMES ONLY IP ADDRESSES -->
-    <param name="sip-ip" value="$${internal_ip_v4}"/>
+    <param name="sip-ip" value="$${local_ip_v4}"/>
     <param name="hold-music" value="$${hold_music}"/>
     <param name="apply-nat-acl" value="nat.auto"/>
 
@@ -199,7 +197,7 @@
     <!-- Port to listen on for TLS requests. (5061 will be used if unspecified) -->
     <param name="tls-sip-port" value="$${internal_tls_port}"/>
     <!-- Location of the agent.pem and cafile.pem ssl certificates (needed for TLS server) -->
-    <!--<param name="tls-cert-dir" value=""/>-->
+    <param name="tls-cert-dir" value="/usr/local/freeswitch/conf/tls"/>
     <!-- Optionally set the passphrase password used by openSSL to encrypt/decrypt TLS private key files -->
     <param name="tls-passphrase" value=""/>
     <!-- Verify the date on TLS certificates -->
@@ -232,6 +230,7 @@
 
     <!--Uncomment to set all inbound calls to no media mode-->
     <!--<param name="inbound-bypass-media" value="true"/>-->
+	<param name="inbound-bypass-media" value="true"/>
 
     <!--Uncomment to set all inbound calls to proxy media mode-->
     <!--<param name="inbound-proxy-media" value="true"/>-->
