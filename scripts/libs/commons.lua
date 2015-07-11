@@ -101,7 +101,7 @@ function batchSendSMS(from_user, toUsers, ...)
         end;
     end;
     msg = buf.toString();
-    logger.info("from ", from_user, '>>>>\n', msg);
+    logger.info(from_user, 'will say to(', table.concat(toUsers, ","), ")msg:", msg);
 
     -- select regist info 
     local sql;
@@ -122,12 +122,11 @@ function batchSendSMS(from_user, toUsers, ...)
 
     -- interrupted if no receivers
     if not hasReceivers then 
-        logger.info('nobody online');
+        logger.info('nobody online, sql:', buf.toString());
         return false; 
     end;
 
     -- send it
-    logger.info(sql);
     local hasSentIt = false;
     local from_proto = 'sip';
     local to_proto = 'sip';
@@ -166,7 +165,7 @@ function batchSendSMS(from_user, toUsers, ...)
         event:chat_execute("send");
         hasSentIt = true;
 
-        logger.info(from_full, '-->', to);
+        logger.info('said from', from_full, "to", to);
     end);
 
     logger.info('user[', from_user, '] finish send ');
@@ -189,15 +188,13 @@ function sendSMS(from_user, to_user, ...)
         end;
     end;
     msg = buf.toString();
-    logger.info("from ", from_user, '>>>>\n', msg);
+    logger.info(from_user, 'say to', to_user, ":", msg);
 
     -- select regist info 
     local sql;
     buf = newSqlBuilder("SELECT distinct user_id, realm, profile from t_registration_ext where user_id = ");
     buf.format("'%s'", to_user);
     sql = buf.toString();
-    logger.info(sql);
-
 
     -- send it
     local hasSentIt = false;
