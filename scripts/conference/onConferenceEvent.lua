@@ -58,7 +58,7 @@ elseif action =='add-member' then
     -- change moderator's screen if I am the moderator
     if is_moderator then
         api:execute('conference', confPhone..' vid-floor '..memberId.." force");
-        logger.info("conference ", confPhone, " set vid-floor ", user, ' because of he is moderator');
+        logger.warn("conference ", confPhone, " set vid-floor ", user, ' because of he is moderator');
     end;
 
     service.notifyAll();

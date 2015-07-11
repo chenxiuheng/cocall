@@ -22,7 +22,7 @@ if nil ~= conf and '1' == conf['valid'] then
         --  wait user audio+video send to FS
         --     if don't wait, FS will has problem(s) when punch NAT
         freeswitch.consoleLog("info", string.format("user %s waiting to join conference %s\n", caller_id, conf_num));
-        freeswitch.msleep(2 * 1000); -- because default RTP timeout is 1800 
+        freeswitch.msleep(3 * 1000); -- because default RTP timeout is 1800 
 
 
         -- if session is NOT disavailable

@@ -109,7 +109,9 @@ if nil ~= confPhone and nil ~=  from_user then
            if isTrue(is_in) then
               hasSentIt = sendSMS(confPhone, to, 'conference-ask-for-moderator', params);
            end;
-        end;
+	end;
+
+print("hasSentIt:", hasSentIt);
 
         if not hasSentIt then
             service.setModerator(from_user);
