@@ -4,6 +4,7 @@ require('libs.db');
 require('libs.commons');
 require('task.taskService');
 require('conference.conferenceService');
+setDbhAutoRelease(false);
 
 local from_user = message:getHeader('from_user');
 local confPhone = message:getHeader('to_user');

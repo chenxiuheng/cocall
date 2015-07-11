@@ -1,9 +1,23 @@
 require('libs.commons');
 require('libs.db');
 
-function setTimeout(id, cmd, millisec)
+function setTimeout(arg0, arg1, arg2)
     local sql;
-    if nil == id then id = cmd; end;
+    local id, cmd, millisec;
+    if nil == arg2 then
+        id = arg0;
+        cmd = arg0;
+        millisec = arg1;
+    elseif nil == arg0 then
+        id = arg1;
+        cmd = arg1;
+        millisec = arg2;
+    else 
+        id = arg0;
+        cmd = arg1;
+        millisec = arg2;
+    end;
+
 
     -- split cmd, read api name and params
     local segs = string.split(cmd.." ", '(%s+)');
@@ -50,9 +64,22 @@ function setTimeout(id, cmd, millisec)
     return id;
 end;
 
-function setTimeoutIfAbsent(id, cmd, millisec)
+function setTimeoutIfAbsent(arg0, arg1, arg2)
     local sql;
-    if nil == id then id = cmd; end;
+    local id, cmd, millisec;
+    if nil == arg2 then
+        id = arg0;
+        cmd = arg0;
+        millisec = arg1;
+    elseif nil == arg0 then
+        id = arg1;
+        cmd = arg1;
+        millisec = arg2;
+    else 
+        id = arg0;
+        cmd = arg1;
+        millisec = arg2;
+    end;
 
     -- split cmd, read api name and params
     local segs = string.split(cmd.." ", '(%s+)');

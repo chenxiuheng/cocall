@@ -8,7 +8,6 @@ require('libs.db');
 require('task.taskService');
 require('conference.conferenceService');
 
-
 local conf_name = event:getHeader('Conference-Name');
 local confPhone = conf_name;
 local memberId = event:getHeader('Member-ID');
@@ -51,9 +50,9 @@ elseif action =='add-member' then
     last_member_id, is_moderator = setConferenceMemberIn(confPhone, user, memberId);
 
     -- kick the member use same user no
-    if nil ~= last_member_id then
+    if nil ~= last_member_id and last_member_id ~= memberId then
         api:execute('conference', confPhone..' kick '..last_member_id);
-        logger.warn("conference ", confPhone, " kick ", last_member_id);
+        logger.warn("conference ", confPhone, " kick last member ", last_member_id, "new member = ", memberId);
     end;
 
     -- change moderator's screen if I am the moderator

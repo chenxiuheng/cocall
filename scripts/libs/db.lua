@@ -6,8 +6,10 @@ if nil == globalDSN then
      freeswitch.consoleLog("warning", "use default ODBC-DSN:[" .. dsn .."\n");
 end;
 
+local autoRelease = true;
 
-dbh = nil;
+
+local dbh = nil;
 sqlstring = {}
 function sqlstring.format (format, ...)
     local args = {...};
@@ -97,7 +99,17 @@ function newSqlBuilder(initString)
     return self;
 end;
 
--- use sql query
+function setDbhAutoRelease(auto)
+    autoRelease = auto;
+end;
+
+function releaseDbh()
+    if nil ~= dbh then
+        dbh:release();
+        dbh = nil;
+    end;
+end; 
+
 function executeQuery(sql, callback)
     if nil == dbh then dbh = freeswitch.Dbh(dsn); end;
 
@@ -112,6 +124,10 @@ function executeQuery(sql, callback)
                 callback(row);
             end
         end);
+
+        if autoRelease then
+            releaseDbh();
+        end;
     else
         freeswitch.consoleLog("warning", "cannot connect to database by " .. dsn .. "\n")
     end
@@ -125,7 +141,14 @@ function executeUpdate(sql)
     if dbh:connected() then
         freeswitch.consoleLog("notice", sql .. "\n") ;
         dbh:query(sql);
-        return dbh:affected_rows();
+        local affected = dbh:affected_rows();
+
+
+        if autoRelease then
+            releaseDbh();
+        end;
+
+        return affected;
     else
         freeswitch.consoleLog("warning", "cannot connect to database by " .. dsn .. "\n")
         return 0;
@@ -139,10 +162,17 @@ function now()
     local now = nil;
     if dbh:connected() then
         local sql = "select extract(epoch from now()) * 1000 as t";
+        freeswitch.consoleLog("debug", "select now()\n") ;
 
         dbh:query(sql, function(row)
             now = tonumber(row['t']);
         end);
+
+
+        if autoRelease then
+            releaseDbh();
+        end;
+
     end
 
     return now;

@@ -32,8 +32,9 @@ while nil ~= cur_clock  do
         freeswitch.msleep(diff);
     end;
 
-    -- the last is synch
     last_clock = now();
+
+    -- execute jobs
     freeswitch.API():execute('lua', "task/task_async_executor.lua");
 end;
 

@@ -39,8 +39,6 @@ if nil ~= i then
     action = string.sub(body, 0, i-1);
     params = string.sub(body, i+1);
 
-
-
     local service;  -- conference service
 
     --- 1, create conference
@@ -77,9 +75,21 @@ if nil ~= i then
 
     --- 2, get my conferences
     elseif 'list_conferences' == action then
-        local id = string.format('%s/%s', from_user, 'list_conferences');
-        local cmd = string.format("api_send_conferences %s %s", to_user, from_user);
-        setTimeout(id, cmd, 500); -- 500ms later to send, avoid send msg frequently
+        local pageNo, pageSize;
+
+        if nil ~= params then
+            for v1, v2 in string.gmatch(params, "([%d]*)/([%d]*)(.*)") do
+               pageNo = v1;
+               pageSize = v2;
+            end; 
+        end;
+        if nil == pageNo or nil == pageSize then
+            pageNo = 1;
+            pageSize = 6;
+        end;
+        
+        local cmd = string.format("api_send_conferences %s %s %s %s", to_user, from_user, pageNo, pageSize);
+        setTimeout(cmd, 500); -- 500ms later to send, avoid send msg frequently
     else 
         sendSMS(to_user, from_user, 'error', "I don't know what you said");
     end;
