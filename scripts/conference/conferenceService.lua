@@ -329,7 +329,34 @@ function getConferenceInfo(confPhone)
 end;
 
 -- get conferences of User
-function getMyConferences (memberPhone, runningOnly)
+function countMyConferences (memberPhone, runningOnly)
+    local extraSql = "";
+    if nil ~= runningOnly and runningOnly then extraSql = " and n_is_running = 1 " ;end;
+
+    local buf = newSqlBuilder();
+    
+    buf.append(" SELECT ");
+    buf.append(" count(*) as num");
+    buf.append(" FROM ");
+    buf.append("    t_conference AS conf ");
+    buf.append(" where  n_valid=1 ");
+    buf.append(extraSql);
+    buf.append(" and EXISTS ( ");
+    buf.append("     SELECT c_conference_phone_no from t_conference_member  ");
+    buf.append("     where c_conference_phone_no = conf.c_phone_no");
+    buf.append("       and c_phone_no = '%s' ", memberPhone);
+    buf.append(") ");
+
+    local count = 0;
+    buf.query(function(row)
+        count = tonumber(row['num']);
+    end);
+
+
+    return count;
+end;
+
+function getMyConferences (memberPhone, runningOnly, pageNo, pageSize)
     local extraSql = "";
     if nil ~= runningOnly and runningOnly then extraSql = " and n_is_running = 1 " ;end;
 
@@ -342,9 +369,11 @@ function getMyConferences (memberPhone, runningOnly)
     buf.append(" conf.c_creator_name as creator_name, ");
     buf.append(" conf.c_profile, ");
     buf.append(" conf.n_valid as valid, ");
+    buf.append(" conf.n_is_running as is_running, ");
     buf.append(" to_char(conf.d_created, 'YYYY-MM-DD HH24:MI:SS') as created,");
     buf.append(" (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no) as num_member, ");
-    buf.append(" (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no and n_is_in = 1) as num_is_in ");
+    buf.append(" (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no and n_is_in = 1) as num_is_in, ");
+    buf.format(" (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no and c_phone_no='%s' and n_is_in = 1) as num_i_am_in ", memberPhone);
     buf.append(" FROM ");
     buf.append("    t_conference AS conf ");
     buf.append(" where  n_valid=1 ");
@@ -354,7 +383,9 @@ function getMyConferences (memberPhone, runningOnly)
     buf.append("     where c_conference_phone_no = conf.c_phone_no");
     buf.append("       and c_phone_no = '%s' ", memberPhone);
     buf.append(") ");
-    buf.append(" order by d_created desc ");
+    buf.append(" order by num_i_am_in desc, is_running asc, d_created desc ");
+    buf.append(" limit ").append(pageSize).append(" OFFSET ").append((pageNo-1) * pageSize);
+
 
     return buf.list();
 end;

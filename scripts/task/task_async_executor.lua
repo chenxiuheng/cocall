@@ -1,12 +1,18 @@
+require('libs.commons');
 require('task.taskService');
+
+
+setDbhAutoRelease(false);
 
 -- ///////////////////////////////////////////////
 --   API define(s)
 -- ///////////////////////////////////////////////
-local thread_max = 32;
+local thread_max = 64;
 local thread_remains = thread_max;
+local logger = getLogger('executor');
 function execute(cmd)
     thread_remains = thread_remains - 1;
+    logger.info('threads-', thread_max - thread_remains, ": ", cmd, ".");
 
     if (thread_remains < 0) then
         thread_remains = thread_max;
@@ -18,10 +24,12 @@ function execute(cmd)
 end;
 
 local A = {};
-A.api_send_conferences = function (created, from_user, to_user)
+A.api_send_conferences = function (created, from_user, to_user, pageNo, pageSize)
     local cmd = newStringBuilder("task/api_send_conferences.lua");
     cmd.append(" ").append(from_user);
     cmd.append(" ").append(to_user);
+    cmd.append(" ").append(pageNo);
+    cmd.append(" ").append(pageSize);
 
     execute(cmd.toString());
 end;
