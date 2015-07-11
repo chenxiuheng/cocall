@@ -371,8 +371,10 @@ function getMyConferences (memberPhone, runningOnly, pageNo, pageSize)
     buf.append(" conf.n_valid as valid, ");
     buf.append(" conf.n_is_running as is_running, ");
     buf.append(" to_char(conf.d_created, 'YYYY-MM-DD HH24:MI:SS') as created,");
+    buf.append(" (case when  conf.d_started is not null then 1 ELSE 2 end ) as is_started,");
     buf.append(" (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no) as num_member, ");
     buf.append(" (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no and n_is_in = 1) as num_is_in, ");
+    buf.format(" (select max(d_update) from t_conference_member where c_conference_phone_no=conf.c_phone_no and c_phone_no='%s' ) as d_member_update,", memberPhone);
     buf.format(" (select count(*) from t_conference_member where c_conference_phone_no=conf.c_phone_no and c_phone_no='%s' and n_is_in = 1) as num_i_am_in ", memberPhone);
     buf.append(" FROM ");
     buf.append("    t_conference AS conf ");
@@ -383,8 +385,11 @@ function getMyConferences (memberPhone, runningOnly, pageNo, pageSize)
     buf.append("     where c_conference_phone_no = conf.c_phone_no");
     buf.append("       and c_phone_no = '%s' ", memberPhone);
     buf.append(") ");
-    buf.append(" order by num_i_am_in desc, is_running asc, d_created desc ");
-    buf.append(" limit ").append(pageSize).append(" OFFSET ").append((pageNo-1) * pageSize);
+    buf.append(" order by num_i_am_in desc, is_running asc, is_started asc,  d_member_update desc, d_created desc ");
+
+    if nil ~= pageNo and nil ~= pageSize then
+        buf.append(" limit ").append(pageSize).append(" OFFSET ").append((pageNo-1) * pageSize);
+    end;
 
 
     return buf.list();

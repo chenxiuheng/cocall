@@ -27,7 +27,6 @@ function api_send_conferences (from_user, to_user, page_no, page_size)
 end;
 
 --  execute if has argv
-print(argv[1], argv[2], argv[3], argv[4]);
 local from_user = argv[1];
 local to_user = argv[2];
 local page_no;

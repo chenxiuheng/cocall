@@ -50,9 +50,9 @@ elseif action =='add-member' then
     last_member_id, is_moderator = setConferenceMemberIn(confPhone, user, memberId);
 
     -- kick the member use same user no
-    if nil ~= last_member_id and last_member_id ~= memberId then
+    if nil ~= last_member_id and '' ~= last_member_id and last_member_id ~= memberId then
         api:execute('conference', confPhone..' kick '..last_member_id);
-        logger.warn("conference ", confPhone, " kick last member ", last_member_id, "new member = ", memberId);
+        logger.warn("conference ", confPhone, " kick last member =", last_member_id, "new member = ", memberId);
     end;
 
     -- change moderator's screen if I am the moderator
@@ -99,10 +99,8 @@ elseif action == 'video-floor-change' then
         local members = service.getMembers('moderator');
         for i, member in ipairs(members) do
             local is_in = member['is_in'];
-            logger.info("conference ", confPhone, " user  = ", user, ', moderator = ', member['user']);
-            logger.info("conference ", confPhone, " moderator is_in = ", isTrue(is_in), ', member_id = ', member['member_id']);
 
-            if not isTrue(is_in ) then
+            if not isTrue(is_in ) or '' == member['member_id']  then
                 logger.warn("conference ", confPhone, " moderator is NOT online, change to member_id = ", new_id);
             elseif member['member_id'] ~= new_id then
                 local cmd_video_floor_change = confPhone..' vid-floor '.. member['member_id']..' force';
